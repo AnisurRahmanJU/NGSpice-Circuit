@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NGspice to Circuit</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <span class="brand">NGSpice <i> Circuit</i></span><small>NGspice → Circuit Simulator</small><span class="sp"></span>
+  <button id="bRun" class="pri">▶ Run</button><label><input type="checkbox" id="auto" checked> Auto-run</label>
+  <button id="bTheme" title="Toggle theme">◐ Theme</button>
+</header>
+<main>
+  <section>
+    <div class="bar"><b>NGspice netlist</b><span class="sp"></span>
+      <select id="ex" aria-label="Examples"></select><select id="addan" aria-label="Add analysis"><option value="">＋ Analysis</option><option value="op">.op</option><option value="dc">.dc sweep</option><option value="ac">.ac sweep</option><option value="tran">.tran</option></select>
+      <input id="fname" value="circuit" placeholder="file name" title="File name for .cir and .svg" style="width:120px;padding:4px 6px"><button id="bCopy">Copy</button><button id="bCir">Save .cir</button></div>
+    <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="NGspice netlist"></textarea>
+    <div id="status"></div>
+  </section>
+<div class="col">
+  <section style="flex:1.1">
+    <div class="bar"><b id="ttl">Circuit</b><span class="sp"></span><span class="hint">Scroll to zoom · drag to pan · click a part to edit it right on the drawing</span>
+      <button id="bFit">Fit</button><button id="bSvg" class="pri">Download SVG</button></div>
+    <div id="cv"><svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+      <defs><pattern id="gp" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="var(--grid)" stroke-width="1"/></pattern></defs>
+      <rect x="-6000" y="-6000" width="12000" height="12000" fill="url(#gp)"/><g id="scene"></g></svg><div id="pop"></div></div>
+    <div id="dirs"></div>
+  </section>
+  <section style="flex:1">
+    <div class="bar"><b>Simulation</b><div id="tabs"><button data-t="op">Operating point</button><button data-t="dc">DC sweep</button><button data-t="ac">AC</button><button data-t="tran">Transient</button></div><span class="sp"></span><span id="simst"></span></div>
+    <div id="out"></div>
+  </section>
+</div>
+</main>
+<script src="ngspice.js"></script>
+</body>
+</html>
