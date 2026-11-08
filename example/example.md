@@ -1,4 +1,4 @@
-# 100 NGspice Examples for the Circuit Viewer / Simulator
+# 100 NGspice Code for Circuit Simulator
 
 Every netlist below uses only what your JS engine supports. Paste one into the editor (or add it to the `EX` object) and use the **Operating point / DC / AC / Transient** tabs.
 
@@ -86,7 +86,7 @@ Compare `v(mid)` with and without `RL`.
 V1 vcc 0 DC 12
 R1 vcc mid 10k
 R2 mid 0 10k
-RL mid 0 4.7k
+R3 mid 0 4.7k
 .op
 .dc V1 0 12 1
 .end
@@ -168,8 +168,8 @@ Power in `RL` is highest when `RL = Rs` (see the P column in the operating-point
 ```css
 * Maximum power transfer RL = Rs
 Vs 1 0 DC 10
-Rs 1 2 50
-RL 2 0 50
+R1 1 2 50
+R2 2 0 50
 .op
 .dc Vs 0 10 1
 .end
@@ -398,7 +398,7 @@ C1 out 0 1u
 V1 in 0 AC 1
 L1 in out 10m
 C1 out 0 1u
-RL out 0 50
+R1 out 0 50
 .ac dec 50 100 100k
 .end
 ```
@@ -424,7 +424,7 @@ C3 a 0 20n
 C1 in b 10n
 C2 b out 10n
 R3 b 0 5k
-RL out 0 1meg
+R4 out 0 1meg
 .ac dec 100 10 100k
 .end
 ```
@@ -494,11 +494,11 @@ C1 m 0 100n
 ```css
 * Pi filter 50 ohm
 V1 src 0 AC 1
-Rs src in 50
+R1 src in 50
 C1 in 0 1u
 L1 in out 10m
 C2 out 0 1u
-RL out 0 50
+R2 out 0 50
 .ac dec 50 100 1meg
 .end
 ```
@@ -536,7 +536,7 @@ D1 a 0 DX
 * Half-wave rectifier
 V1 in 0 SIN(0 5 50)
 D1 in out DX
-RL out 0 1k
+R1 out 0 1k
 .model DX D(Is=1e-14 N=1)
 .tran 0.1m 60m
 .end
@@ -548,7 +548,7 @@ RL out 0 1k
 V1 in 0 SIN(0 5 50)
 D1 in out DX
 C1 out 0 10u
-RL out 0 1k
+R1 out 0 1k
 .model DX D(Is=1e-14 N=1)
 .tran 0.1m 60m
 .end
@@ -563,7 +563,7 @@ D1 a p DX
 D2 b p DX
 D3 0 a DX
 D4 0 b DX
-RL p 0 1k
+R1 p 0 1k
 .model DX D(Is=1e-14 N=1)
 .tran 0.1m 60m
 .end
@@ -576,7 +576,7 @@ V1 a 0 SIN(0 10 50)
 V2 b 0 SIN(0 10 50 0 0 180)
 D1 a out DX
 D2 b out DX
-RL out 0 1k
+R1 out 0 1k
 .model DX D(Is=1e-14 N=1)
 .tran 0.1m 60m
 .end
@@ -624,7 +624,7 @@ The signal is shifted upward so its negative peaks are clamped at about −0.7 V
 V1 in 0 SIN(0 5 1k)
 C1 in out 10u
 D1 0 out DX
-RL out 0 100k
+R1 out 0 100k
 .model DX D(Is=1e-14 N=1)
 .tran 5u 10m
 .end
@@ -639,7 +639,7 @@ C1 in a 1u
 D1 0 a DX
 D2 a out DX
 C2 out 0 1u
-RL out 0 10k
+R1 out 0 10k
 .model DX D(Is=1e-14 N=1)
 .tran 10u 30m
 .end
@@ -798,7 +798,7 @@ Re e 0 1k
 Ce e 0 100u
 Q1 c b e QN
 Cout c out 10u
-RL out 0 10k
+R3 out 0 10k
 .model QN NPN(Is=1e-14 Bf=200)
 .op
 .ac dec 20 1 1meg
@@ -818,7 +818,7 @@ Re e 0 1k
 Ce e 0 100u
 Q1 c b e QN
 Cout c out 10u
-RL out 0 10k
+R3 out 0 10k
 .model QN NPN(Is=1e-14 Bf=200)
 .tran 10u 5m
 .end
@@ -837,7 +837,7 @@ Cb b 0 100u
 Rc vcc c 2.2k
 Q1 c b e QN
 Cout c out 10u
-RL out 0 10k
+R3 out 0 10k
 .model QN NPN(Is=1e-14 Bf=200)
 .op
 .ac dec 20 10 1meg
@@ -914,7 +914,7 @@ Vee vee 0 DC -12
 Vin in 0 SIN(0 5 1k)
 Q1 vcc in out QN
 Q2 vee in out QP
-RL out 0 1k
+R1 out 0 1k
 .model QN NPN(Is=1e-14 Bf=200)
 .model QP PNP(Is=1e-14 Bf=100)
 .tran 5u 3m
@@ -930,7 +930,7 @@ D1 b m DX
 D2 m 0 DX
 Q1 c b e QN
 Re e 0 470
-Rload vcc c 1k
+R2 vcc c 1k
 .model DX D(Is=1e-14 N=1)
 .model QN NPN(Is=1e-14 Bf=200)
 .op
@@ -1003,7 +1003,7 @@ R2 g 0 320k
 Rd vdd d 2.2k
 M1 d g 0 0 NM W=10u L=1u
 Cout d out 100n
-RL out 0 100k
+R3 out 0 100k
 .model NM NMOS(Vto=1 Kp=100u Lambda=0.02)
 .op
 .ac dec 20 10 1meg
@@ -1315,13 +1315,13 @@ R1 b 0 1k
 ```css
 * Bridge rectifier with filter cap
 V1 a b SIN(0 12 50)
-Rref b 0 1meg
+R1 b 0 1meg
 D1 a p DX
 D2 b p DX
 D3 0 a DX
 D4 0 b DX
 C1 p 0 470u
-RL p 0 100
+R2 p 0 100
 .model DX D(Is=1e-14 N=1)
 .tran 0.1m 100m
 .end
@@ -1335,7 +1335,7 @@ Vin vin 0 DC 15
 R1 vin b 2.2k
 D1 b 0 LED
 Q1 vin b out QN
-RL out 0 1k
+R2 out 0 1k
 .model LED D(Is=1e-18 N=2)
 .model QN NPN(Is=1e-14 Bf=200)
 .op
@@ -1347,11 +1347,11 @@ RL out 0 1k
 ```css
 * 3rd-order Butterworth LC low-pass
 V1 src 0 AC 1
-Rs src in 50
+R1 src in 50
 C1 in 0 3.18u
 L1 in out 15.9m
 C2 out 0 3.18u
-RL out 0 50
+R2 out 0 50
 .ac dec 50 100 100k
 .end
 ```
@@ -1361,7 +1361,7 @@ The pulse arrives about 32 µs later per section.
 ```css
 * LC delay line
 V1 src 0 PULSE(0 1 0 1u 1u 200u 1m)
-Rs src a 32
+R1 src a 32
 C1 a 0 1u
 L1 a b 1m
 C2 b 0 1u
@@ -1369,7 +1369,7 @@ L2 b c 1m
 C3 c 0 1u
 L3 c d 1m
 C4 d 0 1u
-RL d 0 32
+R2 d 0 32
 .tran 1u 500u
 .end
 ```
