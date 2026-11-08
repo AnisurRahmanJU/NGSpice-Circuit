@@ -15,7 +15,7 @@ Every netlist below uses only what your JS engine supports. Paste one into the e
 
 Models used throughout:
 
-```
+```css
 .model DX D(Is=1e-14 N=1)
 .model QN NPN(Is=1e-14 Bf=200)
 .model QP PNP(Is=1e-14 Bf=100)
@@ -43,7 +43,7 @@ Models used throughout:
 
 ### 1. Voltage divider
 Plot `v(out)` in the DC tab: it is exactly half the input.
-```
+```css
 * Voltage divider
 V1 in 0 DC 10
 R1 in out 1k
@@ -55,7 +55,7 @@ R2 out 0 1k
 
 ### 2. Series resistors
 Current is identical through all three; check `i(R1)`, `i(R2)`, `i(R3)`.
-```
+```css
 * Series resistors
 V1 1 0 DC 12
 R1 1 2 1k
@@ -68,7 +68,7 @@ R3 3 0 4.7k
 
 ### 3. Parallel resistors
 Branch currents add up to the source current.
-```
+```css
 * Three parallel branches
 V1 in 0 DC 12
 R1 in 0 1k
@@ -81,7 +81,7 @@ R3 in 0 4.7k
 
 ### 4. Loaded voltage divider
 Compare `v(mid)` with and without `RL`.
-```
+```css
 * Loaded voltage divider
 V1 vcc 0 DC 12
 R1 vcc mid 10k
@@ -94,7 +94,7 @@ RL mid 0 4.7k
 
 ### 5. Wheatstone bridge
 `R4` is slightly off balance, so the bridge detector `Rg` sees a small voltage.
-```
+```css
 * Wheatstone bridge
 V1 top 0 DC 10
 R1 top a 1k
@@ -108,7 +108,7 @@ Rg a b 10k
 ```
 
 ### 6. Superposition with two sources
-```
+```css
 * Superposition: two voltage sources
 V1 1 0 DC 10
 V2 3 0 DC 5
@@ -121,7 +121,7 @@ R3 3 2 1k
 ```
 
 ### 7. Current source feeding a resistor network
-```
+```css
 * Current source network
 I1 0 1 DC 1m
 R1 1 0 4.7k
@@ -134,7 +134,7 @@ R3 2 0 2.2k
 
 ### 8. R-2R ladder DAC (3 bit, code 101)
 Expected output: 5 V × 5/8 = 3.125 V at `n2`.
-```
+```css
 * R-2R ladder DAC, code 101
 Vb2 b2 0 DC 5
 Vb1 b1 0 DC 0
@@ -150,7 +150,7 @@ Rb n1 n2 10k
 ```
 
 ### 9. Delta network with loads
-```
+```css
 * Delta resistor network with loads
 V1 a 0 DC 10
 R1 a b 1k
@@ -165,7 +165,7 @@ R5 c 0 2.2k
 
 ### 10. Maximum power transfer
 Power in `RL` is highest when `RL = Rs` (see the P column in the operating-point table).
-```
+```css
 * Maximum power transfer RL = Rs
 Vs 1 0 DC 10
 Rs 1 2 50
@@ -181,7 +181,7 @@ RL 2 0 50
 
 ### 11. RC charge and discharge (square wave)
 Time constant is 1 ms.
-```
+```css
 * RC charge/discharge
 V1 in 0 PULSE(0 5 0 1n 1n 5m 10m)
 R1 in out 1k
@@ -191,7 +191,7 @@ C1 out 0 1u
 ```
 
 ### 12. Slow RC (τ = 1 ms with 10 kΩ and 100 nF)
-```
+```css
 * RC time constant 1 ms
 V1 in 0 PULSE(0 5 0 1n 1n 5m 10m)
 R1 in out 10k
@@ -202,7 +202,7 @@ C1 out 0 100n
 
 ### 13. RL step response
 Time constant L/R = 0.1 ms. Plot `i(L1)`.
-```
+```css
 * RL step response
 V1 in 0 PULSE(0 5 0 1n 1n 5m 10m)
 R1 in out 100
@@ -212,7 +212,7 @@ L1 out 0 10m
 ```
 
 ### 14. RC differentiator
-```
+```css
 * RC differentiator
 V1 in 0 PULSE(0 5 0 1n 1n 1m 2m)
 C1 in out 10n
@@ -222,7 +222,7 @@ R1 out 0 10k
 ```
 
 ### 15. RC integrator (square wave to triangle)
-```
+```css
 * RC integrator
 V1 in 0 PULSE(-1 1 0 1n 1n 50u 100u)
 R1 in out 100k
@@ -233,7 +233,7 @@ C1 out 0 10n
 
 ### 16. Series RLC, underdamped
 Overshoot and ringing at about 1.6 kHz.
-```
+```css
 * Series RLC underdamped
 V1 in 0 PULSE(0 1 0 1n 1n 5m 10m)
 R1 in a 10
@@ -244,7 +244,7 @@ C1 b 0 1u
 ```
 
 ### 17. Series RLC, overdamped
-```
+```css
 * Series RLC overdamped
 V1 in 0 PULSE(0 1 0 1n 1n 5m 10m)
 R1 in a 1k
@@ -256,7 +256,7 @@ C1 b 0 1u
 
 ### 18. Series RLC, critically damped
 R = 2·√(L/C) = 200 Ω.
-```
+```css
 * Series RLC critically damped
 V1 in 0 PULSE(0 1 0 1n 1n 5m 10m)
 R1 in a 200
@@ -267,7 +267,7 @@ C1 b 0 1u
 ```
 
 ### 19. Parallel RLC ringing (current impulse)
-```
+```css
 * Parallel RLC impulse response
 I1 0 n PULSE(0 1m 0 1n 1n 20u 1)
 R1 n 0 100
@@ -278,7 +278,7 @@ C1 n 0 1u
 ```
 
 ### 20. Two-stage RC network
-```
+```css
 * Two-stage RC low-pass step
 V1 in 0 PULSE(0 5 0 1n 1n 5m 10m)
 R1 in a 1k
@@ -291,7 +291,7 @@ C2 b 0 1u
 
 ### 21. Capacitor charged through a Thevenin divider
 Final value is the divider voltage, not the supply.
-```
+```css
 * Capacitor charging via divider
 V1 in 0 DC 10
 R1 in a 10k
@@ -302,7 +302,7 @@ C1 a 0 1u
 ```
 
 ### 22. Charge sharing between two capacitors
-```
+```css
 * Coupled RC stages
 V1 in 0 PULSE(0 5 0 1n 1n 10m 20m)
 R1 in a 1k
@@ -318,7 +318,7 @@ C2 b 0 2u
 # 3. AC Frequency Response and Filters
 
 ### 23. RC low-pass (fc ≈ 1.59 kHz)
-```
+```css
 * RC low-pass
 V1 in 0 AC 1
 R1 in out 1k
@@ -328,7 +328,7 @@ C1 out 0 100n
 ```
 
 ### 24. RC high-pass
-```
+```css
 * RC high-pass
 V1 in 0 AC 1
 C1 in out 100n
@@ -339,7 +339,7 @@ R1 out 0 1k
 
 ### 25. RL low-pass
 fc = R/(2πL) ≈ 1.59 kHz.
-```
+```css
 * RL low-pass
 V1 in 0 AC 1
 L1 in out 10m
@@ -349,7 +349,7 @@ R1 out 0 100
 ```
 
 ### 26. RL high-pass
-```
+```css
 * RL high-pass
 V1 in 0 AC 1
 R1 in out 100
@@ -360,7 +360,7 @@ L1 out 0 10m
 
 ### 27. Series RLC band-pass (Q = 10)
 Output is taken across `R1`.
-```
+```css
 * Series RLC band-pass
 V1 in 0 AC 1
 L1 in a 10m
@@ -371,7 +371,7 @@ R1 out 0 10
 ```
 
 ### 28. Series LC notch (band-stop)
-```
+```css
 * LC notch at 1.59 kHz
 V1 in 0 AC 1
 R1 in out 100
@@ -382,7 +382,7 @@ C1 m 0 1u
 ```
 
 ### 29. Parallel LC resonant band-pass
-```
+```css
 * Parallel resonant band-pass
 V1 in 0 AC 1
 R1 in out 1k
@@ -393,7 +393,7 @@ C1 out 0 1u
 ```
 
 ### 30. Second-order LC low-pass
-```
+```css
 * Second-order LC low-pass
 V1 in 0 AC 1
 L1 in out 10m
@@ -404,7 +404,7 @@ RL out 0 50
 ```
 
 ### 31. Second-order CL high-pass
-```
+```css
 * Second-order high-pass
 V1 in 0 AC 1
 C1 in out 1u
@@ -415,7 +415,7 @@ R1 out 0 100
 ```
 
 ### 32. Twin-T notch filter (fn ≈ 1.59 kHz)
-```
+```css
 * Twin-T notch
 V1 in 0 AC 1
 R1 in a 10k
@@ -430,7 +430,7 @@ RL out 0 1meg
 ```
 
 ### 33. Wien bridge network (peak gain 1/3 at 1.59 kHz)
-```
+```css
 * Wien network band-pass
 V1 in 0 AC 1
 R1 in a 10k
@@ -442,7 +442,7 @@ C2 out 0 10n
 ```
 
 ### 34. Two-stage RC low-pass (−40 dB/dec)
-```
+```css
 * Cascaded RC low-pass
 V1 in 0 AC 1
 R1 in a 1k
@@ -455,7 +455,7 @@ C2 out 0 100n
 
 ### 35. Three-stage RC phase-shift network
 The phase plot reaches 180° of lead near 650 Hz (1/(2πRC√6)), where the gain is about 1/29.
-```
+```css
 * Three-stage RC phase shifter
 V1 in 0 AC 1
 C1 in a 10n
@@ -469,7 +469,7 @@ R3 out 0 10k
 ```
 
 ### 36. Lead network
-```
+```css
 * Lead network
 V1 in 0 AC 1
 R1 in out 10k
@@ -480,7 +480,7 @@ R2 out 0 1k
 ```
 
 ### 37. Lag network
-```
+```css
 * Lag network
 V1 in 0 AC 1
 R1 in out 10k
@@ -491,7 +491,7 @@ C1 m 0 100n
 ```
 
 ### 38. Pi (C-L-C) filter between 50 Ω terminations
-```
+```css
 * Pi filter 50 ohm
 V1 src 0 AC 1
 Rs src in 50
@@ -508,7 +508,7 @@ RL out 0 50
 # 4. Diodes and Rectifiers
 
 ### 39. Diode forward I-V curve
-```
+```css
 * Diode forward I-V
 V1 in 0 DC 0
 R1 in a 100
@@ -520,7 +520,7 @@ D1 a 0 DX
 ```
 
 ### 40. Reverse-biased diode
-```
+```css
 * Diode reverse and forward sweep
 V1 in 0 DC -5
 R1 in a 1k
@@ -532,7 +532,7 @@ D1 a 0 DX
 ```
 
 ### 41. Half-wave rectifier (no filter)
-```
+```css
 * Half-wave rectifier
 V1 in 0 SIN(0 5 50)
 D1 in out DX
@@ -543,7 +543,7 @@ RL out 0 1k
 ```
 
 ### 42. Half-wave rectifier with filter capacitor
-```
+```css
 * Half-wave rectifier with filter
 V1 in 0 SIN(0 5 50)
 D1 in out DX
@@ -555,7 +555,7 @@ RL out 0 1k
 ```
 
 ### 43. Full-wave bridge rectifier
-```
+```css
 * Full-wave bridge rectifier
 V1 a b SIN(0 10 50)
 Rref b 0 1meg
@@ -570,7 +570,7 @@ RL p 0 1k
 ```
 
 ### 44. Center-tapped full-wave rectifier
-```
+```css
 * Center-tapped full-wave rectifier
 V1 a 0 SIN(0 10 50)
 V2 b 0 SIN(0 10 50 0 0 180)
@@ -583,7 +583,7 @@ RL out 0 1k
 ```
 
 ### 45. Positive clipper (limits at about +0.7 V)
-```
+```css
 * Diode clipper
 V1 in 0 SIN(0 5 1k)
 R1 in out 1k
@@ -594,7 +594,7 @@ D1 out 0 DX
 ```
 
 ### 46. Bidirectional clipper (±0.7 V)
-```
+```css
 * Bidirectional clipper
 V1 in 0 SIN(0 5 1k)
 R1 in out 1k
@@ -606,7 +606,7 @@ D2 0 out DX
 ```
 
 ### 47. Biased clipper (limits near 2.7 V)
-```
+```css
 * Biased clipper
 V1 in 0 SIN(0 5 1k)
 Vb ref 0 DC 2
@@ -619,7 +619,7 @@ D1 out ref DX
 
 ### 48. Diode clamper (DC restorer)
 The signal is shifted upward so its negative peaks are clamped at about −0.7 V; compare `v(in)` with `v(out)`.
-```
+```css
 * Diode clamper
 V1 in 0 SIN(0 5 1k)
 C1 in out 10u
@@ -632,7 +632,7 @@ RL out 0 100k
 
 ### 49. Voltage doubler
 Output approaches about 2·Vpeak minus diode drops.
-```
+```css
 * Voltage doubler
 V1 in 0 SIN(0 5 1k)
 C1 in a 1u
@@ -647,7 +647,7 @@ RL out 0 10k
 
 ### 50. Three series diodes as a voltage reference
 Output `v(a)` is about 2 V.
-```
+```css
 * Series diode reference
 V1 in 0 DC 9
 R1 in a 1k
@@ -661,7 +661,7 @@ D3 c 0 DX
 ```
 
 ### 51. Diode AND gate
-```
+```css
 * Diode AND gate
 Vcc vcc 0 DC 5
 Va a 0 PULSE(0 5 0 1n 1n 1m 2m)
@@ -675,7 +675,7 @@ D2 y b DX
 ```
 
 ### 52. Diode OR gate
-```
+```css
 * Diode OR gate
 Va a 0 PULSE(0 5 0 1n 1n 1m 2m)
 Vb b 0 PULSE(0 5 0 1n 1n 2m 4m)
@@ -688,7 +688,7 @@ R1 y 0 1k
 ```
 
 ### 53. LED with current-limiting resistor
-```
+```css
 * LED driver
 Vs 1 0 DC 5
 R1 1 a 330
@@ -701,7 +701,7 @@ D1 a 0 LED
 
 ### 54. Schottky versus silicon diode
 The Schottky (`DS`) conducts at a lower voltage.
-```
+```css
 * Schottky vs silicon
 V1 in 0 DC 0
 R1 in a 100
@@ -720,7 +720,7 @@ D2 b 0 DX
 # 5. BJT Circuits
 
 ### 55. Fixed-bias common emitter (supply sweep)
-```
+```css
 * NPN fixed bias
 Vcc vcc 0 DC 12
 Rb vcc b 220k
@@ -734,7 +734,7 @@ Q1 c b 0 QN
 
 ### 56. BJT output characteristics (Ib = 20 µA)
 Plot `i(Vce)` against the swept `Vce`.
-```
+```css
 * BJT output characteristic
 Ib 0 b DC 20u
 Vce c 0 DC 5
@@ -746,7 +746,7 @@ Q1 c b 0 QN
 ```
 
 ### 57. Voltage-divider bias with emitter resistor
-```
+```css
 * Voltage-divider bias
 Vcc vcc 0 DC 12
 R1 vcc b 47k
@@ -761,7 +761,7 @@ Q1 c b e QN
 ```
 
 ### 58. BJT as a saturated switch
-```
+```css
 * BJT switch
 Vcc vcc 0 DC 5
 Vin in 0 PULSE(0 5 0 1u 1u 1m 2m)
@@ -774,7 +774,7 @@ Q1 c b 0 QN
 ```
 
 ### 59. Emitter follower
-```
+```css
 * Emitter follower
 Vcc vcc 0 DC 12
 Vin in 0 SIN(6 1 1k)
@@ -786,7 +786,7 @@ Re e 0 1k
 ```
 
 ### 60. Common-emitter amplifier: frequency response
-```
+```css
 * CE amplifier AC response
 Vcc vcc 0 DC 12
 Vin in 0 SIN(0 10m 1k) AC 1
@@ -806,7 +806,7 @@ RL out 0 10k
 ```
 
 ### 61. Common-emitter amplifier: transient
-```
+```css
 * CE amplifier transient
 Vcc vcc 0 DC 12
 Vin in 0 SIN(0 20m 1k)
@@ -825,7 +825,7 @@ RL out 0 10k
 ```
 
 ### 62. Common-base amplifier
-```
+```css
 * Common-base amplifier
 Vcc vcc 0 DC 12
 Vin in 0 SIN(0 20m 1k) AC 1
@@ -846,7 +846,7 @@ RL out 0 10k
 ```
 
 ### 63. BJT current mirror
-```
+```css
 * BJT current mirror
 Vcc vcc 0 DC 12
 Rref vcc c1 10k
@@ -861,7 +861,7 @@ Rl vcc out 4.7k
 
 ### 64. Differential pair
 Sweep `Vin1` and watch the collector voltages cross.
-```
+```css
 * BJT differential pair
 Vcc vcc 0 DC 12
 Vee vee 0 DC -12
@@ -880,7 +880,7 @@ Re e vee 10k
 
 ### 65. Darlington emitter follower
 Emitter voltage is about 1.4 V below the base.
-```
+```css
 * Darlington pair
 Vcc vcc 0 DC 12
 Vb b 0 DC 5
@@ -894,7 +894,7 @@ Re e 0 1k
 ```
 
 ### 66. PNP common-emitter stage
-```
+```css
 * PNP common emitter
 Vcc vcc 0 DC 12
 Rb b 0 220k
@@ -907,7 +907,7 @@ Q1 c b vcc QP
 ```
 
 ### 67. Complementary push-pull follower (crossover distortion)
-```
+```css
 * Push-pull emitter follower
 Vcc vcc 0 DC 12
 Vee vee 0 DC -12
@@ -922,7 +922,7 @@ RL out 0 1k
 ```
 
 ### 68. Constant-current source with diode reference
-```
+```css
 * BJT current source
 Vcc vcc 0 DC 12
 R1 vcc b 4.7k
@@ -943,7 +943,7 @@ Rload vcc c 1k
 # 6. MOSFET Circuits
 
 ### 69. NMOS transfer characteristic
-```
+```css
 * NMOS transfer curve
 Vdd vdd 0 DC 5
 Vg g 0 DC 0
@@ -956,7 +956,7 @@ M1 d g 0 0 NM W=20u L=1u
 ```
 
 ### 70. NMOS output characteristic (Vgs = 3 V)
-```
+```css
 * NMOS output characteristic
 Vg g 0 DC 3
 Vds d 0 DC 5
@@ -968,7 +968,7 @@ M1 d g 0 0 NM W=20u L=1u
 ```
 
 ### 71. Common-source stage with gate-voltage sweep
-```
+```css
 * NMOS common source
 Vdd vdd 0 DC 5
 Vg g 0 DC 2
@@ -981,7 +981,7 @@ M1 d g 0 0 NM W=10u L=1u
 ```
 
 ### 72. Common-source amplifier: transient
-```
+```css
 * NMOS CS amplifier transient
 Vdd vdd 0 DC 10
 Vin g 0 SIN(2 0.2 1k)
@@ -993,7 +993,7 @@ M1 d g 0 0 NM W=10u L=1u
 ```
 
 ### 73. Common-source amplifier: frequency response
-```
+```css
 * NMOS CS amplifier AC
 Vdd vdd 0 DC 10
 Vin in 0 SIN(0 10m 1k) AC 1
@@ -1011,7 +1011,7 @@ RL out 0 100k
 ```
 
 ### 74. Source follower
-```
+```css
 * NMOS source follower
 Vdd vdd 0 DC 10
 Vin in 0 SIN(5 0.5 1k)
@@ -1023,7 +1023,7 @@ Rs s 0 4.7k
 ```
 
 ### 75. NMOS inverter with resistive load
-```
+```css
 * NMOS resistive-load inverter
 Vdd vdd 0 DC 5
 Vin in 0 PULSE(0 5 0 10n 10n 1u 2u)
@@ -1037,7 +1037,7 @@ Cl out 0 1p
 
 ### 76. CMOS inverter transfer curve
 Switching threshold is near 2.5 V because the devices are matched.
-```
+```css
 * CMOS inverter VTC
 Vdd vdd 0 DC 5
 Vin in 0 DC 0
@@ -1051,7 +1051,7 @@ M2 out in vdd vdd PM W=20u L=1u
 ```
 
 ### 77. CMOS inverter transient with load capacitor
-```
+```css
 * CMOS inverter switching
 Vdd vdd 0 DC 5
 Vin in 0 PULSE(0 5 0 100p 100p 5n 10n)
@@ -1065,7 +1065,7 @@ Cl out 0 100f
 ```
 
 ### 78. NMOS current mirror
-```
+```css
 * NMOS current mirror
 Vdd vdd 0 DC 5
 Rref vdd g 10k
@@ -1079,7 +1079,7 @@ Rl vdd out 4.7k
 ```
 
 ### 79. NMOS differential pair
-```
+```css
 * NMOS differential pair
 Vdd vdd 0 DC 5
 I1 s 0 DC 200u
@@ -1097,7 +1097,7 @@ M2 d2 in2 s 0 NM W=10u L=1u
 
 ### 80. NMOS pass transistor with capacitive load
 Output reaches the input voltage while the gate is high, then holds on the capacitor.
-```
+```css
 * NMOS pass gate
 Vin in 0 DC 3
 Vg g 0 PULSE(0 5 0 1u 1u 100u 200u)
@@ -1116,7 +1116,7 @@ Rl out 0 1meg
 Ideal op-amps are modelled with a high-gain `E` source: `E1 out 0 non-inverting inverting 100000`.
 
 ### 81. VCVS amplifier (gain 10)
-```
+```css
 * VCVS gain of 10
 Vin in 0 DC 0 AC 1
 E1 out 0 in 0 10
@@ -1128,7 +1128,7 @@ Rl out 0 1k
 ```
 
 ### 82. VCCS transconductance stage
-```
+```css
 * VCCS transconductance 2 mS
 Vin in 0 DC 0
 G1 out 0 in 0 2m
@@ -1139,7 +1139,7 @@ Rl out 0 2k
 ```
 
 ### 83. Inverting amplifier (gain −10)
-```
+```css
 * Inverting op-amp
 Vin in 0 DC 0 AC 1
 R1 in inv 1k
@@ -1152,7 +1152,7 @@ E1 out 0 0 inv 100000
 ```
 
 ### 84. Non-inverting amplifier (gain 10)
-```
+```css
 * Non-inverting op-amp
 Vin in 0 DC 0.5 AC 1
 Rf out inv 9k
@@ -1164,7 +1164,7 @@ E1 out 0 in inv 100000
 ```
 
 ### 85. Voltage follower (buffer)
-```
+```css
 * Voltage follower
 Vin in 0 SIN(0 1 1k)
 E1 out 0 in out 100000
@@ -1175,7 +1175,7 @@ Rl out 0 1k
 
 ### 86. Summing amplifier
 Expected output: −(1 V + 2 V) = −3 V.
-```
+```css
 * Summing amplifier
 V1 a 0 DC 1
 V2 b 0 DC 2
@@ -1189,7 +1189,7 @@ E1 out 0 0 inv 100000
 
 ### 87. Difference amplifier
 Expected output: 100k/10k × (2 V − 1 V) = 10 V.
-```
+```css
 * Difference amplifier
 V1 a 0 DC 2
 V2 b 0 DC 1
@@ -1203,7 +1203,7 @@ E1 out 0 np inv 100000
 ```
 
 ### 88. Op-amp integrator
-```
+```css
 * Op-amp integrator
 Vin in 0 PULSE(-1 1 0 1n 1n 500u 1m)
 R1 in inv 10k
@@ -1216,7 +1216,7 @@ E1 out 0 0 inv 100000
 
 ### 89. Op-amp differentiator
 Triangle input gives a square-wave output.
-```
+```css
 * Op-amp differentiator
 Vin in 0 PWL(0 0 0.5m 1 1m 0 1.5m 1 2m 0)
 Rs in x 100
@@ -1228,7 +1228,7 @@ E1 out 0 0 inv 100000
 ```
 
 ### 90. Active low-pass filter (fc ≈ 1 kHz, gain −1)
-```
+```css
 * Active inverting low-pass
 Vin in 0 AC 1
 R1 in inv 10k
@@ -1240,7 +1240,7 @@ E1 out 0 0 inv 100000
 ```
 
 ### 91. Active high-pass filter (fc ≈ 1 kHz, gain −1)
-```
+```css
 * Active inverting high-pass
 Vin in 0 AC 1
 C1 in a 15.9n
@@ -1252,7 +1252,7 @@ E1 out 0 0 inv 100000
 ```
 
 ### 92. Sallen-Key low-pass (Butterworth, fc ≈ 1.6 kHz)
-```
+```css
 * Sallen-Key low-pass
 Vin in 0 AC 1
 R1 in a 10k
@@ -1269,7 +1269,7 @@ E1 out 0 b 0 1
 # 8. Source Waveforms
 
 ### 93. Exponentially damped sine
-```
+```css
 * Damped sine source
 V1 in 0 SIN(0 5 1k 0 500 0)
 R1 in 0 1k
@@ -1278,7 +1278,7 @@ R1 in 0 1k
 ```
 
 ### 94. Square wave through an RC low-pass (harmonic filtering)
-```
+```css
 * Square wave into RC filter
 V1 in 0 PULSE(0 5 0 1n 1n 0.5m 1m)
 R1 in out 1.6k
@@ -1288,7 +1288,7 @@ C1 out 0 100n
 ```
 
 ### 95. Arbitrary PWL stimulus
-```
+```css
 * PWL source into RC
 V1 in 0 PWL(0 0 1m 0 1.1m 5 3m 5 3.1m 0 5m 0)
 R1 in out 1k
@@ -1298,7 +1298,7 @@ C1 out 0 1u
 ```
 
 ### 96. Two series sine sources (100 Hz beat)
-```
+```css
 * Beat between 1 kHz and 1.1 kHz
 V1 a 0 SIN(0 1 1k)
 V2 b a SIN(0 1 1.1k)
@@ -1312,7 +1312,7 @@ R1 b 0 1k
 # 9. Applications
 
 ### 97. Bridge rectifier with reservoir capacitor (ripple)
-```
+```css
 * Bridge rectifier with filter cap
 V1 a b SIN(0 12 50)
 Rref b 0 1meg
@@ -1329,7 +1329,7 @@ RL p 0 100
 
 ### 98. Series-pass regulator (LED reference)
 Output stays near 1.2 V once the input is high enough.
-```
+```css
 * Series-pass regulator
 Vin vin 0 DC 15
 R1 vin b 2.2k
@@ -1344,7 +1344,7 @@ RL out 0 1k
 ```
 
 ### 99. Third-order Butterworth LC low-pass (fc = 1 kHz, 50 Ω)
-```
+```css
 * 3rd-order Butterworth LC low-pass
 V1 src 0 AC 1
 Rs src in 50
@@ -1358,7 +1358,7 @@ RL out 0 50
 
 ### 100. LC delay line (4 sections, Z0 ≈ 32 Ω)
 The pulse arrives about 32 µs later per section.
-```
+```css
 * LC delay line
 V1 src 0 PULSE(0 1 0 1u 1u 200u 1m)
 Rs src a 32
