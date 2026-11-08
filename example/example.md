@@ -558,12 +558,12 @@ R1 out 0 1k
 ```css
 * Full-wave bridge rectifier
 V1 a b SIN(0 10 50)
-Rref b 0 1meg
+R1 b 0 1meg
 D1 a p DX
 D2 b p DX
 D3 0 a DX
 D4 0 b DX
-R1 p 0 1k
+R2 p 0 1k
 .model DX D(Is=1e-14 N=1)
 .tran 0.1m 60m
 .end
@@ -849,10 +849,10 @@ R3 out 0 10k
 ```css
 * BJT current mirror
 Vcc vcc 0 DC 12
-Rref vcc c1 10k
+R1 vcc c1 10k
 Q1 c1 c1 0 QN
 Q2 out c1 0 QN
-Rl vcc out 4.7k
+R2 vcc out 4.7k
 .model QN NPN(Is=1e-14 Bf=200)
 .op
 .dc Vcc 0 12 0.25
@@ -1068,10 +1068,10 @@ Cl out 0 100f
 ```css
 * NMOS current mirror
 Vdd vdd 0 DC 5
-Rref vdd g 10k
+R1 vdd g 10k
 M1 g g 0 0 NM W=10u L=1u
 M2 out g 0 0 NM W=10u L=1u
-Rl vdd out 4.7k
+R2 vdd out 4.7k
 .model NM NMOS(Vto=1 Kp=100u Lambda=0.02)
 .op
 .dc Vdd 0 5 0.1
