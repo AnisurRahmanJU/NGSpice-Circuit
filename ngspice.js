@@ -1,4 +1,4 @@
-/* engine.js — SPICE parser + MNA solver (.op .dc .ac .tran) for R C L V I D Q M E G */
+
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
