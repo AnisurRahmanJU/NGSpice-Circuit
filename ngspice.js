@@ -1,4 +1,3 @@
-
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
@@ -998,7 +997,13 @@ function loadSel(){const it=TOPICS[topic.value].items.find(x=>x.n==exsel.value);
 topic.onchange=()=>{fillEx();loadSel()};exsel.onchange=loadSel;
 $('#bNew').onclick=()=>{S.M=newModel();S.sel.clear();S.selW=null;S.hist=[];S.fut=[];S.desc='';S.touched=false;writeText(genNetlist(S.M));draw();inspect();fit();RES=null;showTab()};
 $('#bOpen').onclick=()=>$('#fileIn').click();
-$('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadText(String(r.result),'Loaded from '+f.name);r.readAsText(f);e.target.value=''};
+$('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  /* Open: normalise the text (BOM, CRLF/CR), load it, then ALWAYS run the simulation right away (even if Auto-run is off) so every analysis in the file (.op .dc .ac .tran) is computed and the right result tab is shown */
+  r.onload=()=>{const t=String(r.result).replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+    clearTimeout(simT);clearTimeout(txT);stopAnim(true);RES=null;TAB='op';
+    loadText(t,'Loaded from '+f.name);
+    clearTimeout(simT);clearTimeout(txT);S.pickTab=true;runSimUI()};
+  r.readAsText(f);e.target.value=''};
 const dl=(name,blob)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800)};
 const fname=()=>((S.M.title||'circuit').replace(/[^\w-]+/g,'_').slice(0,40)||'circuit');
 $('#bCir').onclick=()=>dl(fname()+'.cir',new Blob([src.value],{type:'text/plain'}));
