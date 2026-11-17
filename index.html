@@ -29,7 +29,6 @@
   <aside class="palette">
     <input id="psearch" type="search" placeholder="Search components…" aria-label="Search components">
     <div id="plist"></div>
-    <p class="tip"><b>Tips</b><br>Click a part, then click the canvas. <kbd>R</kbd> rotate · <kbd>M</kbd> mirror · <kbd>W</kbd> wire · <kbd>Del</kbd> delete · <kbd>Esc</kbd> cancel. Click a pin to start a wire.<br><b>ICs &amp; gates</b><br>Add a <b>555 Timer</b> or any <b>CMOS logic gate</b>, wire VDD/VSS to a supply, and drive inputs with <i>Logic input</i> sources. Topics 10–11 hold ready examples.</p>
   </aside>
   <section class="center">
     <div class="canvas-wrap" id="cv">
@@ -52,7 +51,7 @@
     </div>
   </section>
   <aside class="side">
-    <div class="stabs"><button data-p="prop" class="on">Properties</button><button data-p="net">Editable NGSpice</button></div>
+    <div class="stabs"><button data-p="prop" class="on">Properties</button><button data-p="net" >NGspice netlist</button></div>
     <div id="pProp" class="spanel"></div>
     <div id="pNet" class="spanel" hidden>
       <div class="nbar"><select id="addan" aria-label="Add analysis"><option value="">＋ Analysis</option><option value="op">.op</option><option value="dc">.dc sweep</option><option value="ac">.ac sweep</option><option value="tran">.tran</option></select><button id="bCopy">Copy</button><button id="bRunNet" class="run" title="Run simulation">▶</button><span class="hint">Redraw Circuit and Run</span></div>
@@ -61,9 +60,7 @@
     </div>
   </aside>
 </div>
-
 <script src="ngspice.js"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const mainRun = document.getElementById("bRun");
@@ -76,6 +73,5 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 </script>
-
 </body>
 </html>
