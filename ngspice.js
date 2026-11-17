@@ -1,4 +1,3 @@
-
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
@@ -234,6 +233,11 @@ function runSim(M){
     for(let i=0;i<n;i++){d.sw=a+i*s;let y=newton(C,'dc',xc,{g:{},sc:1},150);if(!y)y=op(C,{g:{}});
       if(!y){R.errs.push('.dc: no convergence at '+eng(d.sw));break}xc=y;xs.push(d.sw);XS.push(Float64Array.from(y))}
     delete d.sw;R.dc={xs,X:XS,src:d.nm,cur:d.t==='I'}});
+  /* .ac with only SIN sources (no "AC mag"): use the SIN amplitude as the AC magnitude */
+  const acFix=[];
+  if(find('ac').length&&!C.devs.some(d=>(d.t==='V'||d.t==='I')&&d.s.acm)){
+    C.devs.forEach(d=>{if((d.t==='V'||d.t==='I')&&d.s.w&&d.s.w.t==='sin'&&d.s.w.a[1]>0){d.s.acm=d.s.w.a[1];d.s.acp=d.s.w.a[5]||0;acFix.push(d)}});
+    if(acFix.length)R.warn.push('.ac: no AC magnitude found, using the SIN amplitude of '+acFix.map(d=>d.nm).join(', ')+' as the AC magnitude')}
   find('ac').forEach(t=>{
     const ty=(t[1]||'').toLowerCase(),n=num(t[2]),f0=num(t[3]),f1=num(t[4]);
     if(!['dec','oct','lin'].includes(ty)||!(n>0)||!(f0>0)||!(f1>=f0)){R.errs.push('.ac: expected  .ac dec|oct|lin N fstart fstop');return}
@@ -247,9 +251,16 @@ function runSim(M){
       const y=solve(m.A,m.b,m.S);if(!y){R.errs.push('.ac: singular matrix at '+eng(f)+'Hz');return}
       re.push(y.slice(0,C.N));im.push(y.slice(C.N))}
     R.ac={f:fs,re,im,type:ty}});
+  const tranFix=[];
   find('tran').forEach(t=>{
     const ts=num(t[1]),tf=num(t[2]),t0=t[3]&&!isNaN(num(t[3]))?num(t[3]):0,tm=t[4]&&!isNaN(num(t[4]))?num(t[4]):Infinity;
     if(!(ts>0)||!(tf>0)){R.errs.push('.tran: expected  .tran tstep tstop [tstart [tmax]]');return}
+    /* AC-only sources (V1 in 0 AC 1 / DC 0 AC 1) have no time-domain waveform: in .tran they are driven as
+       a sine  dc + acMag*sin(2*pi*f*t + acPhase).  f = frequency of any SIN source in the netlist,
+       otherwise 5 cycles across the .tran window. */
+    const sinF=(()=>{for(const d of C.devs)if((d.t==='V'||d.t==='I')&&d.s.w&&d.s.w.t==='sin'&&d.s.w.a[2]>0)return d.s.w.a[2];return 0})(),fAC=sinF||5/tf;
+    C.devs.forEach(d=>{if((d.t==='V'||d.t==='I')&&d.s.acm&&!d.s.w){d.s.w={t:'sin',a:[d.s.dc||0,d.s.acm,fAC,0,0,d.s.acp||0]};tranFix.push(d)}});
+    if(tranFix.length)R.warn.push('.tran: AC source '+tranFix.map(d=>d.nm).join(', ')+' driven as a sine at '+eng(fAC)+'Hz');
     const h=Math.max(Math.min(ts,tm,tf/1000),tf/20000),X2={g:{tstep:ts,tstop:tf},sc:1,h,first:true,t:0};
     C.devs.forEach(d=>{const V=i=>i<0?0:x[i];if(d.t==='C'){d.vp=V(d.a)-V(d.b);d.ip=0}if(d.t==='L'){d.ip=x[d.k];d.vp=0}});
     let xc=x;const T=[],XS=[];
@@ -263,7 +274,8 @@ function runSim(M){
     for(let k=1;k<=ns;k++){const tt=k*h;
       if(!step(tt,h,0)){R.errs.push('.tran: timestep too small at t='+eng(tt)+'s');break}
       if(tt>=t0){T.push(tt);XS.push(Float64Array.from(xc))}}
-    R.tran={t:T,X:XS}});
+    R.tran={t:T,X:XS};tranFix.forEach(d=>{d.s.w=null})});
+  acFix.forEach(d=>{d.s.acm=0;d.s.acp=0});
   return R}
 
 /* symbols.js — realistic schematic symbols (LTspice-style), 1 grid unit = 10 px */
