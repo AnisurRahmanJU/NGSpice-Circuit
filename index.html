@@ -51,7 +51,13 @@
     </div>
     <div class="vsplit" id="split" title="Drag to resize · double-click to minimize"></div>
     <div class="dock">
-      <div class="dockbar"><button id="dockT" title="Minimize / restore simulation window">▾</button><button id="dockB" title="Enlarge / shrink simulation window">⤢</button><b>Simulation</b><div id="tabs"><button data-t="op">Operating point</button><button data-t="dc">DC sweep</button><button data-t="ac">AC</button><button data-t="tran">Transient</button></div>
+      <div class="dockbar"><button id="dockT" title="Minimize / restore simulation window">▾</button><button id="dockB" title="Enlarge / shrink simulation window">⤢</button><b>Simulation</b>  
+        <div class="simctl">
+          <button id="bRunSim" class="run" title="Run the simulation and animate the results">▶ Run Simulation</button>
+          <button id="bStopSim" class="stop" title="Stop the animation and show the full result" disabled>■ Stop Simulation</button>
+          <label>Speed <select id="aSpd" aria-label="Animation speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+                    <span id="aProg" aria-hidden="true"><i id="aBar"></i></span><span id="aTime"></span>
+        </div> <div id="tabs"><button data-t="op">Operating point</button><button data-t="dc">DC sweep</button><button data-t="ac">AC</button><button data-t="tran">Transient</button></div>
         <div class="simctl">
           <button id="bRunSim" class="run" title="Run the simulation and animate the results">▶ Run Simulation</button>
           <button id="bStopSim" class="stop" title="Stop the animation and show the full result" disabled>■ Stop Simulation</button>
