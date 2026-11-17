@@ -695,7 +695,27 @@ function ensureModel(M,p){const D=SYMS[p.t];if(!D.mdl)return;const nm=(p.v||'').
   const re=new RegExp('^\\.model\\s+'+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s','i');
   if(!M.dirs.some(d=>re.test(d))){const i=M.dirs.findIndex(d=>/^\.(op|dc|ac|tran)/i.test(d));M.dirs.splice(i<0?M.dirs.length:i,0,`.model ${nm} ${D.mdl}`)}}
 function mutate(fn,key,keep){const now=Date.now();if(!(key&&key===S.lastKey&&now-S.lastT<900)){S.hist.push(JSON.stringify(S.M));if(S.hist.length>120)S.hist.shift()}S.fut=[];S.lastKey=key||'';S.lastT=now;fn();afterEdit(keep)}
-function writeText(t){src.value=t;S.P=parse(t);S.sig=sigOf(S.P);gutter();showErrs(S.P)}
+/* If the netlist has an AC source (AC mag), .ac and .tran are required: add whichever is missing before .end */
+function autoAnalyses(text){
+  const P=parse(text);if(P.errs.length)return text;
+  const srcs=P.els.filter(e=>(e.k==='V'||e.k==='I')&&spec(e.val).acm);
+  if(!srcs.length)return text;
+  const has=k=>P.dirs.some(d=>new RegExp('^\\.'+k+'(\\s|$)','i').test(d));
+  const add=[];
+  if(!has('ac'))add.push('.ac dec 20 10 100k');
+  if(!has('tran')){
+    let f=0;const a=P.dirs.map(d=>d.trim().split(/\s+/)).find(t=>t[0].toLowerCase()==='.ac');
+    if(a){const f0=num(a[3]),f1=num(a[4]);if(f0>0&&f1>0)f=Math.sqrt(f0*f1)}
+    if(!(f>0)){for(const e of P.els){const w=(e.k==='V'||e.k==='I')&&spec(e.val).w;if(w&&w.t==='sin'&&w.a[2]>0){f=w.a[2];break}}}
+    if(!(f>0))f=1000;
+    f=+f.toPrecision(1);const tf=+(5/f).toPrecision(2),ts=+(tf/500).toPrecision(2);
+    add.push('.tran '+eng(ts,true)+' '+eng(tf,true));
+  }
+  if(!add.length)return text;
+  const ls=text.replace(/\s+$/,'').split('\n'),ei=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l));
+  ei>=0?ls.splice(ei,0,...add):ls.push(...add);
+  return ls.join('\n')}
+function writeText(t){t=autoAnalyses(t);src.value=t;S.P=parse(t);S.sig=sigOf(S.P);gutter();showErrs(S.P)}
 function afterEdit(keep){const X=extract(S.M);S.M.wires.forEach(w=>{const g=X.segs.find(s=>s.w===w);if(g&&g.net)w.net=g.net});
   writeText(genNetlist(S.M));draw();updUndo();if(keep)codePreview();else inspect();schedSim()}
 function normPts(pts){const o=[];pts.forEach(q=>{if(!o.length||o[o.length-1][0]!==q[0]||o[o.length-1][1]!==q[1])o.push([q[0],q[1]])});
@@ -833,7 +853,8 @@ function highlight(){const bad=new Set(((S.P&&S.P.errs)||[]).map(x=>x.n));
 function gutter(){const n=src.value.split('\n').length;$('#gut').textContent=Array.from({length:n},(_,i)=>i+1).join('\n');highlight()}
 src.addEventListener('scroll',()=>{$('#gut').scrollTop=src.scrollTop;const h=$('#hl');h.scrollTop=src.scrollTop;h.scrollLeft=src.scrollLeft});
 function showErrs(P){setTimeout(highlight,0);$('#nerr').innerHTML=(P.errs.length?P.errs.map(x=>`<div class="er">Line ${x.n+1}: ${esc(x.m)}</div>`).join(''):`<div class="ok">✓ ${P.els.length} elements · ${P.dirs.filter(d=>/^\.(op|dc|ac|tran)/i.test(d)).length} analyses</div>`)+P.warn.map(w=>`<div class="wn">⚠ ${esc(w)}</div>`).join('')}
-function onText(){const P=parse(src.value);S.P=P;gutter();showErrs(P);if(P.errs.length){schedSim();return}
+function onText(){{const t2=autoAnalyses(src.value);if(t2!==src.value){const c=src.selectionStart;src.value=t2;try{src.setSelectionRange(c,c)}catch(_){}}}
+  const P=parse(src.value);S.P=P;gutter();showErrs(P);if(P.errs.length){schedSim();return}
   const sg=sigOf(P);
   if(sg===S.sig&&S.M.parts.length){P.els.forEach(e=>{const p=S.M.parts.find(q=>q.n===e.n);if(p)p.v=e.k==='V'||e.k==='I'?e.val:e.tail});S.M.dirs=P.dirs.slice();S.M.title=P.title}
   else{S.M=buildFromNetlist(P);S.sig=sg;S.sel.clear();S.selW=null;S.selNet=null;S.hist=[];S.fut=[];if(!S.touched)fit()}
