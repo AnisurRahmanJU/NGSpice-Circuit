@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NGSpice Circuit Simulator Studio</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="styles.css">
 <style>
 .auto {
@@ -16,6 +17,10 @@
   display: none !important;
 }
 </style>
+<style>
+.top .grp button i{margin-right:4px;color:#4cc3ff}
+.top .grp button:hover i{color:#fff}
+</style>
 </head>
 <body>
 <header class="top">
@@ -23,7 +28,7 @@
     <div><b>NGSpice Circuit</b><span> Simulator Studio</span></div></div>
   <div class="ex"><label style="color:orange;" for="topic"><b>Select Topic</b></label><select id="topic"></select><label style="color:orange;" for="exsel"><b>Select Example</b></label><select id="exsel"></select></div>
   <span class="sp"></span>
-  <div class="grp"><button id="bNew" title="New schematic">New</button><button id="bOpen" title="Open a .cir netlist">Open</button><button id="bCir" title="Save netlist (.cir)">Save .cir</button><button id="bSvg" title="Export schematic as SVG">SVG</button><button id="bPng" title="Export schematic as PNG">PNG</button></div>
+  <div class="grp"><button id="bNew" title="New schematic"><i class="fa-solid fa-file-circle-plus" aria-hidden="true"></i> New</button><button id="bOpen" title="Open a .cir netlist"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Open</button><button id="bCir" title="Save netlist (.cir)"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save .cir</button><button id="bSvg" title="Export schematic as SVG"><i class="fa-solid fa-bezier-curve" aria-hidden="true"></i> SVG</button><button id="bPng" title="Export schematic as PNG"><i class="fa-solid fa-file-image" aria-hidden="true"></i> PNG</button></div>
   <div class="grp" id="grpUndo"><button id="bUndo" title="Undo (Ctrl+Z)">↶</button><button id="bRedo" title="Redo (Ctrl+Y)">↷</button></div>
   <label class="auto"><input type="checkbox" id="auto"> Auto-run</label>
   <button id="bRun" class="run">▶ Run</button>
@@ -95,7 +100,7 @@
         AniSpice Circuit Simulator</a>
     </nav>
   </div>
-  <div class="foot-copy">&copy; <span id="yr">2026</span> Md. Anisur Rahman &middot; Built with NGSpice</div>
+  <div class="foot-copy">&copy; <span id="yr">2026</span> Anisur Rahman &middot; Built with NGSpice &amp; ❤</div>
 </footer>
 
 <script src="ngspice.js"></script>
