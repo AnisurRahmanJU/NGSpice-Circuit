@@ -36,6 +36,11 @@
 .tools button.on i,.tools button.on span{color:#fff}
 .tools i.sep{width:1px;height:auto;background:var(--line);margin:3px 2px;align-self:stretch}
 </style>
+<style>
+#pProp button .pi-ic{margin-right:6px;color:#1f8fe0}
+#pProp button:hover .pi-ic{color:#1583d4}
+#pProp button .pi-ic.del{color:#d64545}
+</style>
 </head>
 <body>
 <header class="top">
@@ -131,6 +136,44 @@ document.addEventListener("DOMContentLoaded", function () {
       mainRun.click();
     });
   }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var host = document.getElementById("pProp");
+  if (!host) return;
+  var MAP = [
+    [/rotate/i, "fa-rotate-right", ""],
+    [/mirror|flip/i, "fa-left-right", ""],
+    [/duplicate|copy|clone/i, "fa-clone", ""],
+    [/delete|remove/i, "fa-trash-can", "del"]
+  ];
+  function decorate() {
+    var btns = host.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      if (b.querySelector(".pi-ic")) continue;
+      var t = (b.textContent || "").trim();
+      for (var k = 0; k < MAP.length; k++) {
+        if (MAP[k][0].test(t)) {
+          // drop any old leading symbol/emoji from the label
+          for (var n = b.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 3 && n.nodeValue.trim()) {
+              n.nodeValue = n.nodeValue.replace(/^[^A-Za-z]+/, "");
+              break;
+            }
+          }
+          var ic = document.createElement("i");
+          ic.className = "pi-ic fa-solid " + MAP[k][1] + " " + MAP[k][2];
+          ic.setAttribute("aria-hidden", "true");
+          b.insertBefore(ic, b.firstChild);
+          break;
+        }
+      }
+    }
+  }
+  new MutationObserver(decorate).observe(host, { childList: true, subtree: true });
+  decorate();
 });
 </script>
 </body>
