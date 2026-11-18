@@ -21,9 +21,8 @@
 #aTime {
   display: none !important;
 }
-/* Zoom panel: show only the box-zoom button */
-.zoomctl > span,
-.zoomctl > button:not([data-zm="box"]) {
+/* Zoom panel hidden (box zoom is switched on by script below) */
+.zoomctl {
   display: none !important;
 }
 </style>
@@ -192,6 +191,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   new MutationObserver(decorate).observe(host, { childList: true, subtree: true });
   decorate();
+});
+</script>
+<script>
+/* Keep box-zoom mode switched on even though its button is hidden,
+   so dragging a rectangle on the simulation graph still zooms in. */
+document.addEventListener("DOMContentLoaded", function () {
+  var btn = document.querySelector('.zoomctl button[data-zm="box"]');
+  if (!btn) return;
+  function ensure() { if (!btn.classList.contains("on")) btn.click(); }
+  setTimeout(ensure, 0);
+  new MutationObserver(ensure).observe(btn, { attributes: true, attributeFilter: ["class"] });
 });
 </script>
 </body>
