@@ -58,6 +58,16 @@
 :root[data-theme="light"] #bTheme .th-sun{display:none}
 :root[data-theme="light"] #bTheme .th-moon{display:inline-block}
 </style>
+<style>
+/* Simulation dock: icon buttons (state follows .center.min / .center.big) */
+#dockT,#dockB{font-size:0;line-height:1;padding:4px 9px;min-width:32px}
+#dockT::before,#dockB::before{font-family:"Font Awesome 6 Free";font-weight:900;font-size:13px;color:#1f8fe0;display:inline-block}
+#dockT::before{content:"\f2d1"}
+.center.min #dockT::before{content:"\f2d2"}
+#dockB::before{content:"\f065"}
+.center.big #dockB::before{content:"\f066"}
+#dockT:hover::before,#dockB:hover::before{color:#1583d4}
+</style>
 </head>
 <body>
 <header class="top">
@@ -93,7 +103,7 @@
     </div>
     <div class="vsplit" id="split" title="Drag to resize · double-click to minimize"></div>
     <div class="dock">
-      <div class="dockbar"><button id="dockT" title="Minimize / restore simulation window">▾</button><button id="dockB" title="Enlarge / shrink simulation window">⤢</button><b>Simulation</b>
+      <div class="dockbar"><button id="dockT" title="Minimize ▁ / restore ❐ the simulation window" aria-label="Minimize or restore simulation window">▾</button><button id="dockB" title="Enlarge ⤢ / shrink ⤡ the simulation window" aria-label="Enlarge or shrink simulation window">⤢</button><b>Simulation</b>
         <div class="simctl">
           <button id="bRunSim" class="run" title="Run the simulation and animate the results">▶ Run</button>
           <button id="bStopSim" class="stop" title="Stop the animation and show the full result" disabled>■ Stop</button>
@@ -123,7 +133,7 @@
   <div class="foot-inner">
     <div class="foot-brand">
       <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f2740"/><path d="M4 16h5l2-6 4 12 3-9 2 3h8" fill="none" stroke="#4cc3ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <div><b>NGSpice Circuit Simulator Studio</b><small>Design, ngspice code, simulate and learn circuits right in your browser.</small></div>
+      <div><b>NGSpice Circuit Simulator Studio</b><small>Design, simulate and learn circuits right in your browser.</small></div>
     </div>
     <nav class="foot-links" aria-label="Footer links">
       <a href="https://github.com/AnisurRahmanJU/NGSpice-Circuit" target="_blank" rel="noopener noreferrer">
@@ -137,7 +147,7 @@
         AniSpice Circuit Simulator</a>
     </nav>
   </div>
-  <div class="foot-copy">&copy; <span id="yr">2026</span> NGSpice Circuit Simulator Studio &middot; Built with NGSpice</div>
+  <div class="foot-copy">&copy; <span id="yr">2026</span> Anisur Rahman &middot; Built with NGSpice &amp; ❤</div>
 </footer>
 
 <script src="ngspice.js"></script>
