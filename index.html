@@ -43,6 +43,18 @@
 #pProp button:hover .pi-ic{color:#1583d4}
 #pProp button .pi-ic.del{color:#d64545}
 </style>
+<style>
+#bTheme .th-sun{display:none;color:#ffc83d}
+#bTheme .th-moon{display:inline-block;color:#cfe3ff}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) #bTheme .th-moon{display:none}
+  :root:not([data-theme="light"]) #bTheme .th-sun{display:inline-block}
+}
+:root[data-theme="dark"] #bTheme .th-moon{display:none}
+:root[data-theme="dark"] #bTheme .th-sun{display:inline-block}
+:root[data-theme="light"] #bTheme .th-sun{display:none}
+:root[data-theme="light"] #bTheme .th-moon{display:inline-block}
+</style>
 </head>
 <body>
 <header class="top">
@@ -54,7 +66,7 @@
   <div class="grp" id="grpUndo"><button id="bUndo" title="Undo (Ctrl+Z)">↶</button><button id="bRedo" title="Redo (Ctrl+Y)">↷</button></div>
   <label class="auto"><input type="checkbox" id="auto"> Auto-run</label>
   <button id="bRun" class="run">▶ Run</button>
-  <button id="bTheme" title="Toggle light/dark">◐ Theme</button>
+  <button id="bTheme" title="Switch between light ☀ and dark 🌙 mode" aria-label="Switch between light and dark mode"><i class="fa-solid fa-moon th-moon" aria-hidden="true"></i><i class="fa-solid fa-sun th-sun" aria-hidden="true"></i></button>
   <input type="file" id="fileIn" accept=".cir,.net,.sp,.txt,.spice" hidden>
 </header>
 <div class="work">
