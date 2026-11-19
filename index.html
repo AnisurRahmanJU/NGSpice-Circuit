@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NGSpice Circuit Simulator Studio</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="styles.css">
+<style>
+.auto {
+  display: none !important;
+}
+#bRun {
+  display: none !important;
+}
+#grpUndo {
+  display: none !important;
+}
+.simctl label,
+#aProg,
+#aTime {
+  display: none !important;
+}
+/* Zoom panel hidden (box zoom is switched on by script below) */
+.zoomctl {
+  display: none !important;
+}
+</style>
+<style>
+.top .grp button i{margin-right:4px;color:#4cc3ff}
+.top .grp button:hover i{color:#fff}
+</style>
+<style>
+.tools{flex-wrap:wrap;max-width:calc(100% - 20px);gap:2px}
+.tools button{width:auto;min-width:48px;height:auto;padding:4px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:15px;line-height:1}
+.tools button i{width:auto;margin:0;background:none;color:#1f8fe0;font-size:15px}
+.tools button span{font-size:10px;font-weight:600;letter-spacing:.2px;white-space:nowrap;color:var(--mut)}
+.tools button:hover i{color:#1583d4}
+.tools button.on i,.tools button.on span{color:#fff}
+.tools #tDel i{color:#d64545}
+.tools #tDel:hover i{color:#b83232}
+.tools i.sep{width:1px;height:auto;background:var(--line);margin:3px 2px;align-self:stretch}
+</style>
+<style>
+#pProp button .pi-ic{margin-right:6px;color:#1f8fe0}
+#pProp button:hover .pi-ic{color:#1583d4}
+#pProp button .pi-ic.del{color:#d64545}
+</style>
+<style>
+#bTheme .th-sun{display:none;color:#ffc83d}
+#bTheme .th-moon{display:inline-block;color:#cfe3ff}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) #bTheme .th-moon{display:none}
+  :root:not([data-theme="light"]) #bTheme .th-sun{display:inline-block}
+}
+:root[data-theme="dark"] #bTheme .th-moon{display:none}
+:root[data-theme="dark"] #bTheme .th-sun{display:inline-block}
+:root[data-theme="light"] #bTheme .th-sun{display:none}
+:root[data-theme="light"] #bTheme .th-moon{display:inline-block}
+</style>
+<style>
+/* Simulation dock: icon buttons (state follows .center.min / .center.big) */
+#dockT,#dockB{font-size:0;line-height:1;padding:4px 9px;min-width:32px}
+#dockT::before,#dockB::before{font-family:"Font Awesome 6 Free";font-weight:900;font-size:13px;color:#1f8fe0;display:inline-block}
+#dockT::before{content:"\f2d1"}
+.center.min #dockT::before{content:"\f2d2"}
+#dockB::before{content:"\f065"}
+.center.big #dockB::before{content:"\f066"}
+#dockT:hover::before,#dockB:hover::before{color:#1583d4}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f2740"/><path d="M4 16h5l2-6 4 12 3-9 2 3h8" fill="none" stroke="#4cc3ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>NGSpice Circuit</b><span> Simulator Studio</span></div></div>
+  <div class="ex"><label style="color:orange;" for="topic"><b>Select Topic</b></label><select id="topic"></select><label style="color:orange;" for="exsel"><b>Select Example</b></label><select id="exsel"></select></div>
+  <span class="sp"></span>
+  <div class="grp"><button id="bNew" title="New schematic"><i class="fa-solid fa-file-circle-plus" aria-hidden="true"></i> New</button><button id="bOpen" title="Open a .cir netlist"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Open</button><button id="bCir" title="Save netlist (.cir)"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save</button><button id="bSvg" title="Export circuit + simulation graph as SVG"><i class="fa-solid fa-bezier-curve" aria-hidden="true"></i> SVG</button><button id="bPng" title="Export circuit + simulation graph as PNG"><i class="fa-solid fa-file-image" aria-hidden="true"></i> PNG</button></div>
+  <div class="grp" id="grpUndo"><button id="bUndo" title="Undo (Ctrl+Z)">↶</button><button id="bRedo" title="Redo (Ctrl+Y)">↷</button></div>
+  <label class="auto"><input type="checkbox" id="auto"> Auto-run</label>
+  <button id="bRun" class="run">▶ Run</button>
+  <button id="bTheme" title="Switch between light ☀ and dark 🌙 mode" aria-label="Switch between light and dark mode"><i class="fa-solid fa-moon th-moon" aria-hidden="true"></i><i class="fa-solid fa-sun th-sun" aria-hidden="true"></i></button>
+  <input type="file" id="fileIn" accept=".cir,.net,.sp,.txt,.spice" hidden>
+</header>
+<div class="work">
+  <aside class="palette">
+    <input id="psearch" type="search" placeholder="Search components…" aria-label="Search components">
+    <div id="plist"></div>
+  </aside>
+  <section class="center">
+    <div class="canvas-wrap" id="cv">
+      <div class="tools">
+        <button data-tool="select" class="on" title="Select / move (Esc)"><i class="fa-solid fa-arrow-pointer" aria-hidden="true"></i><span>Select</span></button><button data-tool="wire" title="Draw wire (W)"><i class="fa-solid fa-pen-ruler" aria-hidden="true"></i><span>Wire</span></button><i class="sep"></i>
+        <button id="tRot" title="Rotate (R)"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i><span>Rotate</span></button><button id="tMir" title="Mirror (M)"><i class="fa-solid fa-left-right" aria-hidden="true"></i><span>Mirror</span></button><button id="tDel" title="Delete (Del)"><i class="fa-solid fa-trash-can" aria-hidden="true"></i><span>Delete</span></button><i class="sep"></i>
+        <button id="tFit" title="Fit to view (F)"><i class="fa-solid fa-expand" aria-hidden="true"></i><span>Fit</span></button><button id="tZi" title="Zoom in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i><span>Zoom In</span></button><button id="tZo" title="Zoom out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i><span>Zoom Out</span></button><i class="sep"></i>
+        <div class="viewsw" title="Swap component drawing: Schematic symbols ⇄ Realistic components (T)">
+          <span class="vl on" id="vlSch">Schematic</span>
+          <button id="viewRocker" class="rocker" type="button" role="switch" aria-checked="false" aria-label="Swap between Schematic and Realistic components"><b class="knob"></b></button>
+          <span class="vl" id="vlReal">Realistic</span>
+        </div>
+      </div>
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" tabindex="0">
+        <defs><pattern id="gp" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r=".9" fill="var(--grid)"/></pattern><pattern id="gp2" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" stroke="var(--grid2)"/></pattern></defs>
+        <rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp)"/><rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp2)"/>
+        <g id="scene"></g><g id="over"></g>
+      </svg>
+      <div class="status"><span id="sCoord">x 0 · y 0</span><span id="sHint">Select tool</span><span class="sp"></span><span id="sCount"></span></div>
+    </div>
+    <div class="vsplit" id="split" title="Drag to resize · double-click to minimize"></div>
+    <div class="dock">
+      <div class="dockbar"><button id="dockT" title="Minimize ▁ / restore ❐ the simulation window" aria-label="Minimize or restore simulation window">▾</button><button id="dockB" title="Enlarge ⤢ / shrink ⤡ the simulation window" aria-label="Enlarge or shrink simulation window">⤢</button><b>Simulation</b>
+        <div class="simctl">
+          <button id="bRunSim" class="run" title="Run the simulation and animate the results">▶ Run</button>
+          <button id="bStopSim" class="stop" title="Stop the animation and show the full result" disabled>■ Stop</button>
+          <label>Speed <select id="aSpd" aria-label="Animation speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+          <span id="aProg" aria-hidden="true"><i id="aBar"></i></span><span id="aTime"></span>
+        </div>
+
+        <div class="zoomctl" title="Graph: hover or touch = read values · wheel / pinch = zoom · drag = pan or box zoom · double-click = reset">
+          <span>Zoom</span><button data-zm="pan" title="Drag = pan the zoomed graph">✥</button><button data-zm="box" title="🔍 Box Zoom — drag a rectangle on the graph to zoom into that area" aria-label="Box zoom">▭</button><button data-zm="cur" title="Touch / drag = move the value cursor">⌖</button><button id="zOut" title="Zoom out">－</button><button id="zIn" title="Zoom in">＋</button><button id="zReset" title="Reset zoom">Reset</button><span id="zLbl"></span>
+        </div>
+        <div id="tabs"><button data-t="op">Operating point</button><button data-t="dc">DC sweep</button><button data-t="ac">AC</button><button data-t="tran">Transient</button></div><span class="sp"></span><span id="simst"></span></div>
+       <div id="out"></div>
+    </div>
+  </section>
+  <aside class="side">
+    <div class="stabs"><button data-p="prop" class="on">Properties</button><button data-p="net" >Editable NGSpice</button></div>
+    <div id="pProp" class="spanel"></div>
+    <div id="pNet" class="spanel" hidden>
+      <div class="nbar"><select id="addan" aria-label="Add analysis"><option value="">＋ Analysis</option><option value="op">.op</option><option value="dc">.dc sweep</option><option value="ac">.ac sweep</option><option value="tran">.tran</option></select><button id="bCopy">Copy</button><button id="bRunNet" class="run" title="Run simulation"> ▶ </button><span class="hint">Edit NGSpice Code and Run</span></div>
+      <div class="editor"><pre id="gut" aria-hidden="true"></pre><div class="cwrap"><pre id="hl" aria-hidden="true"></pre><textarea id="src" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="NGspice netlist"></textarea></div></div>
+      <div id="nerr"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="site-footer">
+  <div class="foot-inner">
+    <div class="foot-brand">
+      <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f2740"/><path d="M4 16h5l2-6 4 12 3-9 2 3h8" fill="none" stroke="#4cc3ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>NGSpice Circuit Simulator Studio</b><small>You are most welcome. Design a circuit to make NGSpice code.<br>NGSpice code to create a circuit and simulate your circuits right in your browser.</small></div>
+    </div>
+    <nav class="foot-links" aria-label="Footer links">
+      <a href="https://github.com/AnisurRahmanJU/NGSpice-Circuit" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub Repo</a>
+      <a href="https://dcaclab.com/users/28506/profile" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        About Me</a>
+      <a href="https://anispice.vercel.app" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2-6 4 12 3-9 2 3h5"/></svg>
+        AniSpice Circuit Simulator</a>
+    </nav>
+  </div>
+  <div class="foot-copy">&copy; <span id="yr">2026 -</span> NGSpice Circuit Simulator Studio &middot; Built with NGSpice</div>
+</footer>
+
+<script src="realistic-com.js"></script>
+<script src="ngspice.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const mainRun = document.getElementById("bRunSim");
+  const netRun = document.getElementById("bRunNet");
+  const yr = document.getElementById("yr");
+  if (yr) yr.textContent = new Date().getFullYear();
+
+  if (mainRun && netRun) {
+    netRun.addEventListener("click", function () {
+      mainRun.click();
+    });
+  }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var host = document.getElementById("pProp");
+  if (!host) return;
+  var MAP = [
+    [/rotate/i, "fa-rotate-right", ""],
+    [/mirror|flip/i, "fa-left-right", ""],
+    [/duplicate|copy|clone/i, "fa-clone", ""],
+    [/delete|remove/i, "fa-trash-can", "del"]
+  ];
+  function decorate() {
+    var btns = host.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      if (b.querySelector(".pi-ic")) continue;
+      var t = (b.textContent || "").trim();
+      for (var k = 0; k < MAP.length; k++) {
+        if (MAP[k][0].test(t)) {
+          // drop any old leading symbol/emoji from the label
+          for (var n = b.firstChild; n; n = n.nextSibling) {
+            if (n.nodeType === 3 && n.nodeValue.trim()) {
+              n.nodeValue = n.nodeValue.replace(/^[^A-Za-z]+/, "");
+              break;
+            }
+          }
+          var ic = document.createElement("i");
+          ic.className = "pi-ic fa-solid " + MAP[k][1] + " " + MAP[k][2];
+          ic.setAttribute("aria-hidden", "true");
+          b.insertBefore(ic, b.firstChild);
+          break;
+        }
+      }
+    }
+  }
+  new MutationObserver(decorate).observe(host, { childList: true, subtree: true });
+  decorate();
+});
+</script>
+<script>
+/* Keep box-zoom mode switched on even though its button is hidden,
+   so dragging a rectangle on the simulation graph still zooms in. */
+document.addEventListener("DOMContentLoaded", function () {
+  var btn = document.querySelector('.zoomctl button[data-zm="box"]');
+  if (!btn) return;
+  function ensure() { if (!btn.classList.contains("on")) btn.click(); }
+  setTimeout(ensure, 0);
+  new MutationObserver(ensure).observe(btn, { attributes: true, attributeFilter: ["class"] });
+});
+</script>
+</body>
+</html>
