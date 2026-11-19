@@ -51,15 +51,25 @@ const SU={t:1e12,g:1e9,meg:1e6,k:1e3,m:1e-3,u:1e-6,n:1e-9,p:1e-12,f:1e-15,mil:25
 function num(s){const m=/^\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?)\s*(meg|mil|[tgkmunpf])?/i.exec(s==null?'':String(s));return m?+m[1]*(m[2]?SU[m[2].toLowerCase()]:1):NaN}
 function eng(v,sp){if(!isFinite(v))return String(v);if(v===0)return'0';const P=['f','p','n',sp?'u':'µ','m','','k',sp?'meg':'M','G','T'];let e=Math.floor(Math.log10(Math.abs(v))/3);e=Math.max(-5,Math.min(4,e));return +(v/Math.pow(10,3*e)).toPrecision(sp?6:3)+P[e+5]}
 function spec(v){const o={dc:null,acm:0,acp:0,w:null};let s=v||'';
-  const f=/(sin|pulse|pwl)\s*\(([^)]*)\)/i.exec(s);if(f){o.w={t:f[1].toLowerCase(),a:f[2].trim().split(/[\s,]+/).map(num)};s=s.replace(f[0],' ')}
+  const f=/\b(sin|pulse|pwl|tri|saw|noise)\s*\(([^)]*)\)/i.exec(s);if(f){o.w={t:f[1].toLowerCase(),a:f[2].trim().split(/[\s,]+/).map(num)};s=s.replace(f[0],' ')}
   const a=/\bac\s+(\S+)(?:\s+(\S+))?/i.exec(s);if(a){o.acm=num(a[1])||0;const p=a[2]!=null?num(a[2]):NaN;o.acp=isNaN(p)?0:p;s=s.replace(a[0],' ')}
   const d=/\bdc\s+(\S+)/i.exec(s);if(d)o.dc=num(d[1]);else{const q=s.trim().split(/\s+/)[0];if(q&&!isNaN(num(q)))o.dc=num(q)}
-  if(o.dc==null||isNaN(o.dc))o.dc=o.w?wave(o.w,0,{}):0;return o}
+  if(o.dc==null||isNaN(o.dc))o.dc=o.w?(o.w.t==='noise'?(o.w.a[0]||0):wave(o.w,0,{})):0;return o}
+/* deterministic gaussian noise sample n (same n + seed -> same value, so Newton iterations stay consistent) */
+function gnoise(n,seed){let h=Math.imul(n|0,0x9E3779B1)^Math.imul((seed|0)+0x7F4A7C15,0x85EBCA6B);
+  const u=()=>{h^=h>>>15;h=Math.imul(h,0x2C1B3C6D);h^=h>>>12;h=Math.imul(h,0x297A2D39);h^=h>>>15;return((h>>>0)+0.5)/4294967296};
+  return Math.sqrt(-2*Math.log(u()))*Math.cos(2*Math.PI*u())}
 function wave(w,t,g){const a=w.a,z=(i,d)=>a[i]==null||isNaN(a[i])?d:a[i];
   if(w.t==='sin'){const vo=z(0,0),va=z(1,0),fr=z(2,1/(g.tstop||1)),td=z(3,0),th=z(4,0),ph=z(5,0)*Math.PI/180;
     return t<td?vo+va*Math.sin(ph):vo+va*Math.exp(-(t-td)*th)*Math.sin(2*Math.PI*fr*(t-td)+ph)}
   if(w.t==='pulse'){const v1=z(0,0),v2=z(1,0),td=z(2,0),tr=z(3,g.tstep||1e-9)||1e-12,tf=z(4,g.tstep||1e-9)||1e-12,pw=z(5,g.tstop||1),pr=z(6,g.tstop||1);
     if(t<td)return v1;const u=pr>0?(t-td)%pr:t-td;if(u<tr)return v1+(v2-v1)*u/tr;if(u<tr+pw)return v2;if(u<tr+pw+tf)return v2+(v1-v2)*(u-tr-pw)/tf;return v1}
+  if(w.t==='tri'||w.t==='saw'){const vo=z(0,0),va=z(1,0),fr=z(2,1/(g.tstop||1)),td=z(3,0),ph=z(4,0)/360;
+    let p=((t<td?0:t-td)*fr+ph)%1;if(p<0)p+=1;
+    return vo+va*(w.t==='tri'?(p<.25?4*p:p<.75?2-4*p:4*p-4):2*p-1)}
+  if(w.t==='noise'){const vo=z(0,0),va=z(1,0),fs=z(2,0)>0?z(2,0):1/(g.tstep||(g.tstop||1)/500),sd=z(3,1),td=z(4,0);
+    if(t<td)return vo;const x=(t-td)*fs,n=Math.floor(x),f=x-n;
+    return vo+va*((1-f)*gnoise(n,sd)+f*gnoise(n+1,sd))}
   if(w.t==='pwl'){for(let i=0;i+1<a.length;i+=2)if(t<=a[i])return i===0?a[1]:a[i-1]+(a[i+1]-a[i-1])*(t-a[i-2])/(a[i]-a[i-2]);return a[a.length-1]}
   return 0}
 function solve(A,b,S){
@@ -258,7 +268,7 @@ function runSim(M){
     /* AC-only sources (V1 in 0 AC 1 / DC 0 AC 1) have no time-domain waveform: in .tran they are driven as
        a sine  dc + acMag*sin(2*pi*f*t + acPhase).  f = frequency of any SIN source in the netlist,
        otherwise 5 cycles across the .tran window. */
-    const sinF=(()=>{for(const d of C.devs)if((d.t==='V'||d.t==='I')&&d.s.w&&d.s.w.t==='sin'&&d.s.w.a[2]>0)return d.s.w.a[2];return 0})(),fAC=sinF||5/tf;
+    const sinF=(()=>{for(const d of C.devs)if((d.t==='V'||d.t==='I')&&d.s.w&&/^(sin|tri|saw)$/.test(d.s.w.t)&&d.s.w.a[2]>0)return d.s.w.a[2];return 0})(),fAC=sinF||5/tf;
     C.devs.forEach(d=>{if((d.t==='V'||d.t==='I')&&d.s.acm&&!d.s.w){d.s.w={t:'sin',a:[d.s.dc||0,d.s.acm,fAC,0,0,d.s.acp||0]};tranFix.push(d)}});
     if(tranFix.length)R.warn.push('.tran: AC source '+tranFix.map(d=>d.nm).join(', ')+' driven as a sine at '+eng(fAC)+'Hz');
     const h=Math.max(Math.min(ts,tm,tf/1000),tf/20000),X2={g:{tstep:ts,tstop:tf},sc:1,h,first:true,t:0};
@@ -287,7 +297,7 @@ const FIL='fill="var(--symf)" ';
 const RCd=(p,S)=>window.RC&&RC.on&&RC.has(p.t)?RC.draw(p):S.draw(p);
 const RCink=()=>window.RC&&RC.on?'#2a1f00':null;
 const tx=(x,y,s,o={})=>`<text x="${x}" y="${y}" text-anchor="${o.a||'middle'}" font-size="${o.s||11}" ${o.b?'font-weight="700"':''} fill="${o.c||'var(--sym)'}" stroke="none" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">${esc(s)}</text>`;
-const srcKind=v=>/sin|ac\s/i.test(v)?'sin':/pulse/i.test(v)?'pulse':/pwl/i.test(v)?'pwl':'dc';
+const srcKind=v=>/\bnoise\s*\(/i.test(v)?'noise':/\btri\s*\(/i.test(v)?'tri':/\bsaw\s*\(/i.test(v)?'saw':/sin|ac\s/i.test(v)?'sin':/pulse/i.test(v)?'pulse':/pwl/i.test(v)?'pwl':'dc';
 const resIEC={on:false};
 const two=[['1',-3,0],['2',3,0]];
 function mos(p,n4){ /* p: pmos */
@@ -311,7 +321,7 @@ L:{pre:'L',fmt:'two',pins:two,bb:[-2,-1,2,1],def:'10m',name:'Inductor',cat:'Pass
   draw:()=>`<path d="M-30 0H-20a5 5 0 0 1 10 0a5 5 0 0 1 10 0a5 5 0 0 1 10 0a5 5 0 0 1 10 0H30" ${STY}/>`},
 V:{pre:'V',fmt:'two',pins:two,bb:[-2,-2,2,2],def:'DC 5',name:'Voltage source',cat:'Sources',
   draw:p=>{const k=srcKind(p.v||'');if(k==='dc')return `<path d="M-30 0H-4M4 0H30M-4-15V15M4-8V8" ${STY}/>`+tx(-14,-8,'+',{s:12,b:1});
-    const ic={sin:'M-9 0q4.5-9 9 0t9 0',pulse:'M-9 5V-5H-1V5H7V-5',pwl:'M-9 5L-2-5 3 3 9-5'}[k];
+    const ic={sin:'M-9 0q4.5-9 9 0t9 0',pulse:'M-9 5V-5H-1V5H7V-5',pwl:'M-9 5L-2-5 3 3 9-5',tri:'M-9 5L-4.5-5 0 5 4.5-5 9 5',saw:'M-9 5L-4-5V5L1-5V5L6-5',noise:'M-10 0L-8-4-6 3-4-6-2 5 0-2 2 6 4-5 6 4 8-3 10 1'}[k];
     return `<path d="M-30 0H-14M14 0H30" ${STY}/><circle r="14" ${FIL}stroke="var(--sym)" stroke-width="2"/><path d="${ic}" ${STY}/>`}},
 I:{pre:'I',fmt:'two',pins:two,bb:[-2,-2,2,2],def:'DC 1m',name:'Current source',cat:'Sources',
   draw:()=>`<path d="M-30 0H-14M14 0H30M-8 0H6" ${STY}/><circle r="14" ${FIL}stroke="var(--sym)" stroke-width="2"/><path d="M8 0L1-4V4Z" fill="var(--sym)"/>`},
@@ -653,16 +663,25 @@ $('#auto').onchange=e=>{if(e.target.checked)schedSim()};
 
 /* app.js — schematic editor UI: palette, canvas interactions, inspector, netlist sync, examples */
 const svg=$('#svg'),scene=$('#scene'),over=$('#over'),src=$('#src');
+TOPICS.push({topic:'Waveform Sources (Triangle, Sawtooth, Noise)',items:[
+{n:130,title:'Triangle wave through an RC low-pass',desc:'`TRI(vo va freq td phase)`: 1 kHz triangle, 1 V amplitude. The RC (fc ≈ 1.6 kHz) rounds the corners; plot `v(in)` and `v(out)` in the Transient tab.',
+ net:exNet(['* Triangle into RC low-pass','V1 in 0 TRI(0 1 1k) AC 1','R1 in out 1k','C1 out 0 100n','.tran 10u 3m'])},
+{n:131,title:'Sawtooth wave into a diode clipper',desc:'`SAW(vo va freq td phase)`: ramps from vo-va to vo+va each period. The diode clips the positive ramp near 0.6 V.',
+ net:exNet(['* Sawtooth diode clipper','V1 in 0 SAW(0 2 1k)','R1 in out 1k','D1 out 0 DX','.model DX D(Is=2.52n N=1.75)','.tran 10u 3m'])},
+{n:132,title:'Noise source through an RC low-pass',desc:'`NOISE(vo vrms rate seed)`: repeatable gaussian noise, new random value every 1/rate seconds. The RC (fc ≈ 1.6 kHz) removes the fast part of the noise.',
+ net:exNet(['* White noise into RC low-pass','VN in 0 NOISE(0 0.5 200k 1)','R1 in out 1k','C1 out 0 100n','.tran 5u 5m'])},
+{n:133,title:'Noisy sine cleaned by an RC filter',desc:'A 1 kHz sine plus noise (two sources in series). `v(in)` is noisy; `v(out)` after the RC is much cleaner.',
+ net:exNet(['* Noisy sine + RC filter','VS a 0 SIN(0 1 1k)','VN in a NOISE(0 0.3 200k 3)','R1 in out 470','C1 out 0 100n','.tran 5u 4m'])}]});
 const S={M:newModel(),P:null,sel:new Set(),selW:null,selNet:null,tool:'select',armed:null,armV:null,gr:0,gm:0,hist:[],fut:[],vb:{x:-100,y:-60,w:1000,h:600},mouse:{x:0,y:0,gx:0,gy:0,in:false},wire:null,drag:null,pan:null,sig:'',touched:false,pickTab:false,desc:'',lastKey:'',lastT:0};
 const PAL=[{k:'R',g:'Passive'},{k:'C',g:'Passive'},{k:'Cp',g:'Passive'},{k:'L',g:'Passive'},
- {k:'V',g:'Sources',n:'DC source'},{k:'V',g:'Sources',n:'Sine source',v:'SIN(0 1 1k) AC 1'},{k:'V',g:'Sources',n:'Pulse source',v:'PULSE(0 5 0 1n 1n 0.5m 1m)'},{k:'I',g:'Sources'},
+ {k:'V',g:'Sources',n:'DC source'},{k:'V',g:'Sources',n:'Sine source',v:'SIN(0 1 1k) AC 1'},{k:'V',g:'Sources',n:'Pulse source',v:'PULSE(0 5 0 1n 1n 0.5m 1m)'},{k:'V',g:'Sources',n:'Triangle source',v:'TRI(0 1 1k) AC 1'},{k:'V',g:'Sources',n:'Sawtooth source',v:'SAW(0 1 1k) AC 1'},{k:'V',g:'Sources',n:'Noise source',v:'NOISE(0 0.2 200k 1)'},{k:'I',g:'Sources'},
  {k:'D',g:'Semiconductors'},{k:'ZEN',g:'Semiconductors'},{k:'LED',g:'Semiconductors'},{k:'QN',g:'Semiconductors'},{k:'QP',g:'Semiconductors'},{k:'MN',g:'Semiconductors'},{k:'MP',g:'Semiconductors'},{k:'MN4',g:'Semiconductors'},{k:'MP4',g:'Semiconductors'},
  {k:'OA',g:'Active'},{k:'EV',g:'Active'},{k:'GV',g:'Active'},{k:'V',g:'Sources',n:'Logic input A (10 µs)',v:'PULSE(0 5 0 1n 1n 5u 10u)'},{k:'V',g:'Sources',n:'Logic input B (20 µs)',v:'PULSE(0 5 0 1n 1n 10u 20u)'},
  {k:'NE555',g:'ICs'},{k:'G_INV',g:'CMOS logic gates'},{k:'G_BUF',g:'CMOS logic gates'},{k:'G_AND2',g:'CMOS logic gates'},{k:'G_NAND2',g:'CMOS logic gates'},{k:'G_OR2',g:'CMOS logic gates'},{k:'G_NOR2',g:'CMOS logic gates'},{k:'G_XOR2',g:'CMOS logic gates'},{k:'G_XNOR2',g:'CMOS logic gates'},{k:'G_AND3',g:'CMOS logic gates'},{k:'G_NAND3',g:'CMOS logic gates'},{k:'G_OR3',g:'CMOS logic gates'},{k:'G_NOR3',g:'CMOS logic gates'},
  {k:'GND',g:'Nets & ground'},{k:'LBL',g:'Nets & ground'}];
 const ALT={D:['D','ZEN','LED'],ZEN:['D','ZEN','LED'],LED:['D','ZEN','LED'],C:['C','Cp'],Cp:['C','Cp'],MN:['MN','MN4'],MN4:['MN','MN4'],MP:['MP','MP4'],MP4:['MP','MP4']};
 ['G_AND2','G_NAND2','G_OR2','G_NOR2','G_XOR2','G_XNOR2'].forEach((k,_,a)=>ALT[k]=a);['G_AND3','G_NAND3','G_OR3','G_NOR3'].forEach((k,_,a)=>ALT[k]=a);ALT.G_INV=ALT.G_BUF=['G_INV','G_BUF'];
-const PRE={V:['PULSE(0 5 0 1n 1n 5u 10u)','PULSE(0 5 0 1n 1n 10u 20u)','DC 5','DC 12','AC 1','SIN(0 1 1k)','SIN(0 1 1k) AC 1','PULSE(0 5 0 1n 1n 0.5m 1m)','PWL(0 0 1m 5 2m 0)'],I:['DC 1m','AC 1m','SIN(0 1m 1k)','PULSE(0 1m 0 1n 1n 0.5m 1m)']};
+const PRE={V:['PULSE(0 5 0 1n 1n 5u 10u)','PULSE(0 5 0 1n 1n 10u 20u)','DC 5','DC 12','AC 1','SIN(0 1 1k)','SIN(0 1 1k) AC 1','PULSE(0 5 0 1n 1n 0.5m 1m)','PWL(0 0 1m 5 2m 0)','TRI(0 1 1k) AC 1','SAW(0 1 1k) AC 1','NOISE(0 0.2 200k 1)'],I:['DC 1m','AC 1m','SIN(0 1m 1k)','PULSE(0 1m 0 1n 1n 0.5m 1m)']};
 const LIGHT={'--sym':'#1f3248','--symf':'#eaf3fb','--wire':'#0d8a66','--ink':'#14263a','--mut':'#62768b','--accent':'#1f8fe0','--err':'#d64545'};
 /* ---------- view ---------- */
 function setVB(){const r=svg.getBoundingClientRect();if(r.width)S.vb.h=S.vb.w*r.height/r.width;const v=S.vb;svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`)}
@@ -706,7 +725,7 @@ function autoAnalyses(text){
   if(!has('tran')){
     let f=0;const a=P.dirs.map(d=>d.trim().split(/\s+/)).find(t=>t[0].toLowerCase()==='.ac');
     if(a){const f0=num(a[3]),f1=num(a[4]);if(f0>0&&f1>0)f=Math.sqrt(f0*f1)}
-    if(!(f>0)){for(const e of P.els){const w=(e.k==='V'||e.k==='I')&&spec(e.val).w;if(w&&w.t==='sin'&&w.a[2]>0){f=w.a[2];break}}}
+    if(!(f>0)){for(const e of P.els){const w=(e.k==='V'||e.k==='I')&&spec(e.val).w;if(w&&/^(sin|tri|saw)$/.test(w.t)&&w.a[2]>0){f=w.a[2];break}}}
     if(!(f>0))f=1000;
     f=+f.toPrecision(1);const tf=+(5/f).toPrecision(2),ts=+(tf/500).toPrecision(2);
     add.push('.tran '+eng(ts,true)+' '+eng(tf,true));
@@ -834,8 +853,8 @@ $('#pProp').addEventListener('click',e=>{const id=e.target.id;
   else if(id==='bProbe')probe(S.selW.net)});
 /* ---------- netlist panel ---------- */
 /* ---- NGspice syntax highlighter (overlay <pre> behind a transparent textarea) ---- */
-const HL_KW=/\b(dc|ac|sin|pulse|pwl|exp)(?=[\s(]|$)/gi,HL_TY=/\b(npn|pnp|nmos|pmos|d|njf|pjf)(?=[\s(]|$)/gi;
-function hlGen(s){return esc(s).replace(/([A-Za-z_]\w*)(?==)|(\b(?:dc|ac|sin|pulse|pwl|exp)\b(?=[\s(]|$))|(\b(?:npn|pnp|nmos|pmos)\b(?=[\s(]|$))|(-?\b\d*\.?\d+(?:e[-+]?\d+)?(?:meg|mil|[tgkmunpf])?[A-Za-z]*)|([()=,])/gi,(m,a,b,c,d,f)=>a?`<span class="p">${a}</span>`:b?`<span class="k">${b}</span>`:c?`<span class="q">${c}</span>`:d?`<span class="x">${d}</span>`:`<span class="u">${f}</span>`)}
+const HL_KW=/\b(dc|ac|sin|pulse|pwl|tri|saw|noise|exp)(?=[\s(]|$)/gi,HL_TY=/\b(npn|pnp|nmos|pmos|d|njf|pjf)(?=[\s(]|$)/gi;
+function hlGen(s){return esc(s).replace(/([A-Za-z_]\w*)(?==)|(\b(?:dc|ac|sin|pulse|pwl|tri|saw|noise|exp)\b(?=[\s(]|$))|(\b(?:npn|pnp|nmos|pmos)\b(?=[\s(]|$))|(-?\b\d*\.?\d+(?:e[-+]?\d+)?(?:meg|mil|[tgkmunpf])?[A-Za-z]*)|([()=,])/gi,(m,a,b,c,d,f)=>a?`<span class="p">${a}</span>`:b?`<span class="k">${b}</span>`:c?`<span class="q">${c}</span>`:d?`<span class="x">${d}</span>`:`<span class="u">${f}</span>`)}
 function hlLine(l){
   if(/^\s*[*;]/.test(l))return`<span class="c">${esc(l)}</span>`;
   let m=/^(\s*)(\.\w+)(.*)$/.exec(l);
