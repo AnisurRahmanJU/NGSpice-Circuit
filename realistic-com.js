@@ -145,7 +145,10 @@
     const wave = {
       sin: 'M-11 -3q2.75-6 5.5 0t5.5 0t5.5 0t5.5 0',
       pulse: 'M-11 1V-7H-6V1H-1V-7H4V1H9V-7H11',
-      pwl: 'M-11 1L-5-7-1-2 3-6 11 1'
+      pwl: 'M-11 1L-5-7-1-2 3-6 11 1',
+      tri: 'M-11 -3L-8.25 -7 -2.75 1 2.75 -7 8.25 1 11 -3',
+      saw: 'M-11 1L-5.5 -7V1L0 -7V1L5.5 -7V1L11 -7',
+      noise: 'M-11 -3L-9 -6 -7 0 -5 -7 -3 1 -1 -4 1 -7 3 0 5 -6 7 1 9 -5 11 -3'
     }[kind];
     return lead('M-30 0H-22M22 0H30') +
       sh('rect x="-19" y="-14" width="38" height="28" rx="3.5"', '#434d59', '#14181d', 1) +
@@ -217,7 +220,7 @@
       return g;
     },
     V(p) {
-      const v = p.v || '', k = /sin|ac\s/i.test(v) ? 'sin' : /pulse/i.test(v) ? 'pulse' : /pwl/i.test(v) ? 'pwl' : 'dc';
+      const v = p.v || '', k = /\bnoise\s*\(/i.test(v) ? 'noise' : /\btri\s*\(/i.test(v) ? 'tri' : /\bsaw\s*\(/i.test(v) ? 'saw' : /sin|ac\s/i.test(v) ? 'sin' : /pulse/i.test(v) ? 'pulse' : /pwl/i.test(v) ? 'pwl' : 'dc';
       if (k !== 'dc') return generator(k);
       return lead('M-30 0H-18M15 0H30') +
         '<rect x="-15.5" y="-10.8" width="31" height="21.6" rx="3.4" fill="url(#rc-black)"/>' +
