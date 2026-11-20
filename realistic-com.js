@@ -190,7 +190,7 @@
         sh('rect x="11.5" y="-6.5" width="7" height="13" rx="3.2"', '#d9bb86', 'rgba(0,0,0,.5)', 0.8) +
         [-8.5, -4, 0.5].map((x, i) => `<rect x="${x}" y="-4.6" width="2.4" height="9.2" fill="${b[i]}"/>`).join('') +
         `<rect x="7.5" y="-4.6" width="2.4" height="9.2" fill="${GOLD}"/>` +
-        '<rect x="-13" y="-4.6" width="26" height="9.2" rx="1" fill="url(#rc-gloss)" opacity=".7"/>'; 
+        '<rect x="-13" y="-4.6" width="26" height="9.2" rx="1" fill="url(#rc-gloss)" opacity=".7"/>';
     },
     C(p) {
       return lead('M-30 0H-9M9 0H30') +
