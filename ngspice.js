@@ -576,6 +576,17 @@ TOPICS.push({topic:'555 Timer Circuits',items:[
  net:exNet(['* 555 PWM using CTRL pin','VCC vcc 0 DC 5','VM ctrl 0 SIN(3 0.9 100)','X1 0 trig out vcc ctrl trig disch vcc NE555','R1 vcc disch 1k','R2 disch trig 10k','C1 trig 0 10n IC=0','.tran 2u 20m uic'])},
 {n:107,title:'555 bistable (set / reset latch)',desc:'`set` pulses low on TRIG, `rst` pulses high on THRESH. The output remembers the last event.',
  net:exNet(['* 555 bistable flip-flop','VCC vcc 0 DC 5','VS set 0 PULSE(5 0 1m 10n 10n 500u 4m)','VR rst 0 PULSE(0 5 3m 10n 10n 500u 4m)','X1 0 set q vcc ctrl rst nc vcc NE555','C2 ctrl 0 10n','.tran 10u 10m'])}]});
+/* ---- 555 modulation examples (AM, PAM, PWM, PPM, FM) ---- */
+TOPICS[TOPICS.length-1].items.push({n:108,title:"555 Amplitude Modulation (AM): 50 kHz carrier, 1 kHz audio",desc:"A 555 astable makes a ~50 kHz carrier that switches Q1; the 1 kHz audio rides on the collector supply and an LC tank (≈50 kHz) removes the harmonics, leaving a clean AM envelope. Tick `v(mod_in)` and `v(am_out)`.",
+ net:"* True Amplitude Modulation (AM) using NE555 Timer\n* Architecture: 555 Carrier (~50 kHz) + Transistor Modulator + LC Tank Filter\n\n.title NE555 Amplitude Modulation (Clean AM Envelope)\n\n* ==========================================\n* 1. POWER SUPPLY & MODULATING AUDIO SIGNAL\n* ==========================================\nVCC vcc 0 DC 9V\n\n* Modulating Signal: 1 kHz sine wave, 2V amplitude + 3.5V DC offset\n* (Offset keeps the transistor biased cleanly across the entire audio cycle)\nVMOD mod_in 0 SIN(3.5 2.0 1k)\n\n* ==========================================\n* 2. NE555 CARRIER OSCILLATOR (~50 kHz)\n* ==========================================\n* Pinout: GND TRIG OUT RESET CTRL THRESH DISCH VCC\nX1 0 trig out vcc ctrl thresh disch vcc NE555\n\n* Bypass capacitor on Pin 5 for clean carrier stability\nC_CTRL ctrl 0 10n\n\n* Timing components for ~50 kHz carrier\nR1 vcc disch 1k\nR2 disch thresh 1.3k\nC1 thresh 0 10n\nV_TRIG thresh trig DC 0\n\n* ==========================================\n* 3. AMPLITUDE MODULATOR & LC TANK FILTER\n* ==========================================\n* Base drive from 555 carrier switches Q1 ON and OFF at 50 kHz,\n* chopping the 1 kHz modulating signal at the collector.\nR_BASE out base 4.7k\nQ1 col base 0 Q2N2222\n\n* Collector pull-up to modulating signal\nR_COL mod_in col 1k\n\n* DC-blocking capacitor into LC Bandpass Tank (resonant at ~50 kHz)\n* f0 = 1 / (2 * pi * sqrt(1mH * 10nF)) = 50.3 kHz\nC_COUP col am_out 10n\nL_TANK am_out 0 1m\nC_TANK am_out 0 10n\nR_LOAD am_out 0 10k\n\n* ==========================================\n* 4. MODELS (2N2222 & PURE-ANALOG NE555)\n* ==========================================\n.MODEL Q2N2222 NPN(IS=14.34F BF=255.9 VAF=74.03 IKF=0.2847 ISE=14.34F NE=1.307 BR=6.092 RC=1 CJC=7.306P CJE=22.01P TR=46.91N TF=411.1P)\n\n.SUBCKT NE555 1 2 3 4 5 6 7 8\nR_DIV1 8 5 5k\nR_DIV2 5 ref_low 5k\nR_DIV3 ref_low 1 5k\n\nB_COMP_TH comp_r 1 V = { V(6) > V(5) ? 5 : 0 }\nB_COMP_TR comp_s 1 V = { V(2) < V(ref_low) ? 5 : 0 }\n\nB_NOR1 q_raw 1 V = { (V(comp_r) > 2.5 || V(q_bar) > 2.5) ? 0 : 5 }\nR_DEL1 q_raw q 10\nC_DEL1 q 1 1n\n\nB_NOR2 qb_raw 1 V = { (V(comp_s) > 2.5 || V(q) > 2.5) ? 0 : 5 }\nR_DEL2 qb_raw q_bar 10\nC_DEL2 q_bar 1 1n\n\nB_OUT 3 1 V = { (V(4) > 0.7 && V(q_bar) > 2.5) ? (V(8) - 1.2) : 0.1 }\n\nS_DISCH 7 1 q 1 SW_DISCH\n.MODEL SW_DISCH SW(RON=10 ROFF=100MEG VT=2.5 VH=0.1)\n.ENDS NE555\n\n* ==========================================\n* 5. SIMULATION & PLOTTING COMMANDS\n* ==========================================\n* Run 3ms (3 full cycles of the 1 kHz modulating wave)\n.tran 500n 3m 0 500n\n\n.control\n  run\n  * Plot AC-coupled modulating wave alongside the 50 kHz AM wave\n  plot (v(mod_in)-3.5) v(am_out) title 'NE555 Amplitude Modulation (50kHz Carrier, 1kHz Signal)' xlabel 'Time (s)' ylabel 'Voltage (V)'\n.endc\n\n.end"},
+{n:109,title:"555 Pulse Amplitude Modulation (PAM)",desc:"A ~20 kHz 555 clock briefly turns Q1 off every ~46 µs so `pam_out` samples the 1 kHz message; pulse heights follow `v(msg)`.",
+ net:"* True Pulse Amplitude Modulation (PAM) using NE555 Timer\n* Architecture: NE555 Narrow-Pulse Sampling Clock (~20 kHz) + Transistor Analog Switch\n\n.title NE555 Pulse Amplitude Modulation (True PAM)\n\n* ==========================================\n* 1. POWER SUPPLY & ANALOG MESSAGE SIGNAL\n* ==========================================\nVCC vcc 0 DC 9V\n\n* Message Signal: 1 kHz sine wave, 2V peak amplitude, shifted +3V DC\n* (Positive DC offset ensures PAM pulses stay unipolar 1V to 5V)\nVMSG msg 0 SIN(3.0 2.0 1k)\n\n* ==========================================\n* 2. NE555 SAMPLING CLOCK (~20 kHz, ~20% Duty Cycle)\n* ==========================================\n* Pinout: GND TRIG OUT RESET CTRL THRESH DISCH VCC\nX1 0 trig clk_out vcc ctrl thresh disch vcc NE555\n\n* Control pin bypass capacitor\nC_CTRL ctrl 0 10n\n\n* Timing components: R1 = 4.7k, R2 = 1k, C1 = 10n\n* Note: In standard astable mode, OUT is HIGH for t_H = 0.693*(R1+R2)*C1\n* and LOW for t_L = 0.693*R2*C1 (~7 us narrow LOW pulse every ~46 us)\nR1 vcc disch 4.7k\nR2 disch thresh 1k\nC1 thresh 0 10n\nV_TRIG thresh trig DC 0\n\n* ==========================================\n* 3. PAM SAMPLING SWITCH (SHUNT CHOPPER)\n* ==========================================\n* When 555 clk_out is HIGH (~7.8V), Q1 turns ON and clamps pam_out to ~0V.\n* When 555 clk_out goes LOW (~0.1V) for ~7us, Q1 turns OFF and pam_out\n* jumps directly to the instantaneous voltage of v(msg)!\nR_SERIES msg pam_out 1k\nQ1 pam_out base 0 Q2N2222\nR_BASE clk_out base 4.7k\nR_LOAD pam_out 0 100k\n\n* ==========================================\n* 4. MODELS (2N2222 & PURE-ANALOG NE555)\n* ==========================================\n.MODEL Q2N2222 NPN(IS=14.34F BF=255.9 VAF=74.03 IKF=0.2847 ISE=14.34F NE=1.307 BR=6.092 RC=1 CJC=7.306P CJE=22.01P TR=46.91N TF=411.1P)\n\n.SUBCKT NE555 1 2 3 4 5 6 7 8\nR_DIV1 8 5 5k\nR_DIV2 5 ref_low 5k\nR_DIV3 ref_low 1 5k\n\nB_COMP_TH comp_r 1 V = { V(6) > V(5) ? 5 : 0 }\nB_COMP_TR comp_s 1 V = { V(2) < V(ref_low) ? 5 : 0 }\n\nB_NOR1 q_raw 1 V = { (V(comp_r) > 2.5 || V(q_bar) > 2.5) ? 0 : 5 }\nR_DEL1 q_raw q 10\nC_DEL1 q 1 1n\n\nB_NOR2 qb_raw 1 V = { (V(comp_s) > 2.5 || V(q) > 2.5) ? 0 : 5 }\nR_DEL2 qb_raw q_bar 10\nC_DEL2 q_bar 1 1n\n\nB_OUT 3 1 V = { (V(4) > 0.7 && V(q_bar) > 2.5) ? (V(8) - 1.2) : 0.1 }\n\nS_DISCH 7 1 q 1 SW_DISCH\n.MODEL SW_DISCH SW(RON=10 ROFF=100MEG VT=2.5 VH=0.1)\n.ENDS NE555\n\n* ==========================================\n* 5. SIMULATION & PLOTTING COMMANDS\n* ==========================================\n.tran 500n 2m 0 500n\n\n.control\n  run\n  * Plot original analog message alongside the PAM pulse train\n  plot v(msg) v(pam_out) title 'NE555 Pulse Amplitude Modulation (True PAM)' xlabel 'Time (s)' ylabel 'Voltage (V)'\n.endc\n\n.end"},
+{n:110,title:"555 Pulse Width Modulation (PWM): monostable + pin 5",desc:"A fixed 20 kHz trigger starts a one-shot whose width is set by the 1 kHz signal on CTRL (pin 5). Frequency is constant, duty cycle follows `v(ctrl)`.",
+ net:"* True Pulse Width Modulation (PWM) using NE555 Timer\n* Architecture: Monostable One-Shot triggered by Fixed Clock + Analog Signal on Pin 5\n\n.title NE555 True Pulse Width Modulation (Constant Frequency PWM)\n\n* ==========================================\n* 1. POWER SUPPLY, CLOCK & MODULATING SIGNAL\n* ==========================================\nVCC vcc 0 DC 9V\n\n* Fixed-Frequency Sampling Clock: 20 kHz (Period = 50 us)\n* Short active-LOW trigger pulses (9V -> 0V for 2 us every 50 us)\nVCLK trig 0 PULSE(9 0 1u 50n 50n 2u 50u)\n\n* Modulating Analog Signal: 1 kHz sine wave centered at 5.5V, +/- 2.5V swing\n* (Swings Pin 5 between 3.0V and 8.0V to modulate pulse width from ~15% to ~85%)\nVMSG ctrl 0 SIN(5.5 2.5 1k)\n\n* ==========================================\n* 2. NE555 IN MONOSTABLE PWM MODE\n* ==========================================\n* Pinout: GND TRIG OUT RESET CTRL THRESH DISCH VCC\nX1 0 trig pwm_out vcc ctrl thresh disch vcc NE555\n\n* Timing Resistor and Capacitor (Nominal pulse width ~25 us at 20 kHz)\nR_T vcc thresh 2.2k\nC_T thresh 0 10n\n\n* Connect Discharge (Pin 7) to Threshold (Pin 6) for monostable timing\nV_DISCH disch thresh DC 0\n\n* Load resistor\nR_LOAD pwm_out 0 10k\n\n* ==========================================\n* 3. PURE-ANALOG NE555 SUBCIRCUIT MODEL\n* ==========================================\n.SUBCKT NE555 1 2 3 4 5 6 7 8\nR_DIV1 8 5 5k\nR_DIV2 5 ref_low 5k\nR_DIV3 ref_low 1 5k\n\nB_COMP_TH comp_r 1 V = { V(6) > V(5) ? 5 : 0 }\nB_COMP_TR comp_s 1 V = { V(2) < V(ref_low) ? 5 : 0 }\n\nB_NOR1 q_raw 1 V = { (V(comp_r) > 2.5 || V(q_bar) > 2.5) ? 0 : 5 }\nR_DEL1 q_raw q 10\nC_DEL1 q 1 1n\n\nB_NOR2 qb_raw 1 V = { (V(comp_s) > 2.5 || V(q) > 2.5) ? 0 : 5 }\nR_DEL2 qb_raw q_bar 10\nC_DEL2 q_bar 1 1n\n\nB_OUT 3 1 V = { (V(4) > 0.7 && V(q_bar) > 2.5) ? (V(8) - 1.2) : 0.1 }\n\nS_DISCH 7 1 q 1 SW_DISCH\n.MODEL SW_DISCH SW(RON=10 ROFF=100MEG VT=2.5 VH=0.1)\n.ENDS NE555\n\n* ==========================================\n* 4. SIMULATION & PLOTTING COMMANDS\n* ==========================================\n.tran 500n 2m 0 500n\n\n.control\n  run\n  * Plot modulating analog signal (Pin 5) alongside constant-frequency PWM output\n  plot v(ctrl) v(pwm_out) title 'NE555 True Pulse Width Modulation (20kHz PWM, 1kHz Signal)' xlabel 'Time (s)' ylabel 'Voltage (V)'\n.endc\n\n.end"},
+{n:111,title:"555 Pulse Position Modulation (PPM): dual 555",desc:"Stage 1 makes PWM, a differentiator turns each falling edge into a trigger, and stage 2 emits fixed ~5 µs pulses whose position follows the signal.",
+ net:"* True Pulse Position Modulation (PPM) using Dual NE555 Timers\n* Architecture: Stage 1 (Monostable PWM) -> Falling-Edge Differentiator -> Stage 2 (Monostable PPM)\n\n.title NE555 True Pulse Position Modulation (PPM)\n\n* ==========================================\n* 1. POWER SUPPLY, CLOCK & MODULATING SIGNAL\n* ==========================================\nVCC vcc 0 DC 9V\n\n* Fixed-Frequency Sampling Clock: 20 kHz (Period = 50 us)\nVCLK trig1 0 PULSE(9 0 1u 50n 50n 2u 50u)\n\n* Modulating Analog Signal: 1 kHz sine wave centered at 5.5V, +/- 2.5V swing\nVMSG ctrl1 0 SIN(5.5 2.5 1k)\n\n* ==========================================\n* 2. STAGE 1: NE555 PWM GENERATOR\n* ==========================================\n* Pinout: GND TRIG OUT RESET CTRL THRESH DISCH VCC\nX1 0 trig1 pwm_out vcc ctrl1 thresh1 disch1 vcc NE555\n\nR_T1 vcc thresh1 2.2k\nC_T1 thresh1 0 10n\nV_DISCH1 disch1 thresh1 DC 0\n\n* ==========================================\n* 3. FALLING-EDGE DIFFERENTIATOR & CLAMP\n* ==========================================\n* Differentiates pwm_out so its falling edge creates a negative trigger spike\n* below 1/3 VCC (3V) for Stage 2, while D_CLAMP clips positive spikes at VCC.\nC_DIFF pwm_out trig2 470p\nR_DIFF vcc trig2 4.7k\nD_CLAMP trig2 vcc D1N4148\n\n* ==========================================\n* 4. STAGE 2: NE555 FIXED-WIDTH PPM OUTPUT\n* ==========================================\nX2 0 trig2 ppm_out vcc ctrl2 thresh2 disch2 vcc NE555\n\n* Bypass Pin 5 on Stage 2 for fixed ~5 us output pulse width\n* t_pulse = 1.1 * R_T2 * C_T2 = 1.1 * 4.7k * 1n = 5.17 us\nC_CTRL2 ctrl2 0 10n\nR_T2 vcc thresh2 4.7k\nC_T2 thresh2 0 1n\nV_DISCH2 disch2 thresh2 DC 0\n\nR_LOAD ppm_out 0 10k\n\n* ==========================================\n* 5. MODELS (1N4148 & PURE-ANALOG NE555)\n* ==========================================\n.MODEL D1N4148 D(IS=2.52N RS=0.568 N=1.752 BV=100 IBV=100U CJO=4P TT=20N)\n\n.SUBCKT NE555 1 2 3 4 5 6 7 8\nR_DIV1 8 5 5k\nR_DIV2 5 ref_low 5k\nR_DIV3 ref_low 1 5k\n\nB_COMP_TH comp_r 1 V = { V(6) > V(5) ? 5 : 0 }\nB_COMP_TR comp_s 1 V = { V(2) < V(ref_low) ? 5 : 0 }\n\nB_NOR1 q_raw 1 V = { (V(comp_r) > 2.5 || V(q_bar) > 2.5) ? 0 : 5 }\nR_DEL1 q_raw q 10\nC_DEL1 q 1 1n\n\nB_NOR2 qb_raw 1 V = { (V(comp_s) > 2.5 || V(q) > 2.5) ? 0 : 5 }\nR_DEL2 qb_raw q_bar 10\nC_DEL2 q_bar 1 1n\n\nB_OUT 3 1 V = { (V(4) > 0.7 && V(q_bar) > 2.5) ? (V(8) - 1.2) : 0.1 }\n\nS_DISCH 7 1 q 1 SW_DISCH\n.MODEL SW_DISCH SW(RON=10 ROFF=100MEG VT=2.5 VH=0.1)\n.ENDS NE555\n\n* ==========================================\n* 6. SIMULATION & PLOTTING COMMANDS\n* ==========================================\n.tran 200n 2m 0 200n\n\n.control\n  run\n  * Plot modulating signal alongside fixed-width, position-modulated PPM pulses\n  plot v(ctrl1) v(ppm_out) title 'NE555 True Pulse Position Modulation (PPM)' xlabel 'Time (s)' ylabel 'Voltage (V)'\n  * Optional: Uncomment below to compare PWM (Stage 1) and PPM (Stage 2) together\n  * plot v(ctrl1) v(pwm_out) v(ppm_out)\n.endc\n\n.end"},
+{n:112,title:"555 Frequency Modulation (FM): pin-5 VCO + LC filter",desc:"The audio signal drives CTRL (pin 5) so the 555 frequency sweeps around ~25 kHz; Q1 buffers it and an LC filter gives a smooth FM sine at `fm_out`.",
+ net:"* Frequency Modulation (FM) using NE555 Timer\n* Architecture: 555 Pin-5 VCO + Q2N2222 Output Buffer + LC Sine Filter (0V DC)\n\n.title NE555 Frequency Modulation (Clean Sine FM)\n\n* ==========================================\n* 1. POWER SUPPLY & MODULATING AUDIO SIGNAL\n* ==========================================\nVCC vcc 0 DC 9V\n\n* Modulating Signal: 1 kHz sine wave, 2.2V amplitude + 6.0V DC offset (natural 2/3 VCC)\n* -90 deg phase starts at trough -> peak -> trough for Low -> High -> Low frequency\nVMOD mod_in 0 SIN(6.0 2.2 1k 0 0 -90)\n\n* ==========================================\n* 2. NE555 FREQUENCY MODULATED OSCILLATOR\n* ==========================================\n* Pinout: GND TRIG OUT RESET CTRL THRESH DISCH VCC\nX1 0 trig out vcc ctrl thresh disch vcc NE555\n\n* Feed modulating signal directly into Pin 5 (Control Voltage)\nR_MOD mod_in ctrl 100\nC_CTRL ctrl 0 1n\n\n* Timing components (sweeps ~12 kHz to ~48 kHz around ~25 kHz center)\nR1 vcc disch 1k\nR2 disch thresh 2.2k\nC1 thresh 0 10n\nV_TRIG thresh trig DC 0\n.ic v(thresh)=0\n\n* ==========================================\n* 3. Q2N2222 BUFFER & LC SINE WAVE FILTER\n* ==========================================\n* Q1 buffers the FM square wave from the 555 output\nR_BASE out base 4.7k\nQ1 col base 0 Q2N2222\nR_COL vcc col 1k\n\n* DC-blocking capacitor + Damped LC Low-Pass Filter (fc ≈ 55 kHz)\n* Converts FM square wave into a 0V-DC pure sine wave across all frequencies\nC_COUP col filt_in 1u\nR_FILT filt_in n1 1k\nL_FILT n1 fm_out 4.7m\nC_FILT fm_out 0 1.8n\nR_LOAD fm_out 0 1.5k\n\n* ==========================================\n* 4. MODELS (2N2222 & PURE-ANALOG NE555)\n* ==========================================\n.MODEL Q2N2222 NPN(IS=14.34F BF=255.9 VAF=74.03 IKF=0.2847 ISE=14.34F NE=1.307 BR=6.092 RC=1 CJC=7.306P CJE=22.01P TR=46.91N TF=411.1P)\n\n.SUBCKT NE555 1 2 3 4 5 6 7 8\nR_DIV1 8 5 5k\nR_DIV2 5 ref_low 5k\nR_DIV3 ref_low 1 5k\n\nB_COMP_TH comp_r 1 V = { V(6) > V(5) ? 5 : 0 }\nB_COMP_TR comp_s 1 V = { V(2) < V(ref_low) ? 5 : 0 }\n\nB_NOR1 q_raw 1 V = { (V(comp_r) > 2.5 || V(q_bar) > 2.5) ? 0 : 5 }\nR_DEL1 q_raw q 10\nC_DEL1 q 1 1n\n\nB_NOR2 qb_raw 1 V = { (V(comp_s) > 2.5 || V(q) > 2.5) ? 0 : 5 }\nR_DEL2 qb_raw q_bar 10\nC_DEL2 q_bar 1 1n\n\nB_OUT 3 1 V = { (V(4) > 0.7 && V(q) > 2.5) ? (V(8) - 1.2) : 0.1 }\n\nS_DISCH 7 1 q_bar 1 SW_DISCH\n.MODEL SW_DISCH SW(RON=10 ROFF=100MEG VT=2.5 VH=0.1)\n.ENDS NE555\n\n* ==========================================\n* 5. SIMULATION & PLOTTING COMMANDS\n* ==========================================\n* Run 3ms (3 full cycles of the 1 kHz modulating wave)\n.tran 500n 3m 0 500n\n\n.control\n  run\n  * Plot 0V-DC modulating wave alongside the 0V-DC FM sine wave\n  plot (v(mod_in)-6.0) v(fm_out) title 'NE555 Frequency Modulation (Pure Sine FM, 0V DC)' xlabel 'Time (s)' ylabel 'Voltage (V)'\n.endc\n\n.end"});
 TOPICS.push({topic:'CMOS Logic Gates',items:[
 {n:108,title:'CMOS inverter from MOSFETs (transfer curve)',desc:'The transistor-level cell behind every gate: PMOS pull-up, NMOS pull-down. Plot `v(out)` against `VIN`.',
  net:['* CMOS inverter VTC','VDD vdd 0 DC 5','VIN in 0 DC 0','MP1 out in vdd vdd PM W=4u L=1u','MN1 out in 0 0 NM W=2u L=1u',...RL,'.dc VIN 0 5 0.05','.end'].join('\n')},
@@ -604,7 +615,8 @@ g3(120,'3-input OR gate','`y` is low only for 000.','OR3'),
 /* results.js — simulation dock: tables, plots, probes */
 /* ---------- results UI ---------- */
 const ANIM={on:false,k:'',t0:0,spd:1,idx:null,f:0,raf:0},ZOOM={zx:1,wx:0,zy:1,wy:0},CUR={i:null};
-let RES=null,RUNSIG=null,TAB='op',simT;const PL={},SEL={dc:new Set(),ac:new Set(),tran:new Set()};
+const simSig=t=>String(t||'').split('\n').filter(l=>!/^\s*(plot|print|run|\.control|\.endc)\b/i.test(l)).join('\n').trim();
+let RES=null,RUNSIG=null,PLOTSIG=null,TAB='op',simT;const PL={},SEL={dc:new Set(),ac:new Set(),tran:new Set()};
 const T=tx,COL=['#2b8fd6','#e8590c','#2f9e44','#ae3ec9','#f08c00','#1098ad','#d6336c','#5c7cfa'];
 const col=(tr,arr)=>Array.from(arr,x=>tr.f(i=>x[i]));
 function ticks(lo,hi,n){const r=hi-lo||1,s0=r/n,p=Math.pow(10,Math.floor(Math.log10(s0))),f=s0/p,st=(f<1.5?1:f<3?2:f<7?5:10)*p,o=[];for(let v=Math.ceil(lo/st-1e-9)*st;v<=hi+st*1e-9;v+=st)o.push(+v.toPrecision(12));return o}
@@ -626,9 +638,19 @@ function plot(o,id){
   g+='</g>';
   g+=`<path d="M${L} ${Tp}V${Tp+ph}H${W-Rr}" fill="none" stroke="var(--mut)"/>`+T(L+pw/2,H-4,o.xl,{s:11,c:'var(--mut)'})+`<text transform="translate(12 ${Tp+ph/2}) rotate(-90)" text-anchor="middle" font-size="11" fill="var(--mut)">${esc(o.yl)}</text>`;
   return `<div class="plot" data-id="${id}"><svg viewBox="0 0 ${W} ${H}" data-geom="${[L,pw,x0,x1,Tp,ph].join(',')}" style="position:static;width:100%;height:auto;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none">${g}<path class="xh" d="" stroke="var(--mut)" stroke-dasharray="3 3"/><g clip-path="url(#cp-${id})"><path class="ph" d="" stroke="var(--accent)" stroke-width="1.4"/><g class="dots"></g><g class="cdots"></g></g></svg><div class="rd">&nbsp;</div></div>`}
+/* traces named by the plot / print line(s) inside .control ... .endc of the netlist (null-safe) */
+const CTL_OPT=/\s(title|xlabel|ylabel|xlimit|ylimit|xdelta|ydelta|xindices|xcompress|xlog|ylog|loglog|vs|samep|linplot|retraceplot|combplot|nogrid|nointerp|polar|smith|gridsize|pointplot|ps|hcopy|col|line|all|width)\b/i;
+function ctlLines(text){let ctl=0;const o=[];String(text||'').split('\n').forEach((l,i)=>{const s=l.trim();
+  if(/^\.control\b/i.test(s)){ctl=1;return}if(/^\.endc\b/i.test(s)){ctl=0;return}
+  if(!ctl)return;const m=/^(\s*)(plot|print)\b(.*)$/i.exec(l);if(m)o.push({i,ind:m[1],cmd:m[2],rest:m[3]})});return o}
+function ctlTraces(trs){const el=document.getElementById('src');if(!el)return[];const out=[],seen=new Set();
+  ctlLines(el.value).forEach(L=>{const body=L.rest.split(CTL_OPT)[0],re=/\b(vdb|vm|vp|vr|vi|v|i)\(\s*([^()\s,]+)\s*\)/gi;let m;
+    while((m=re.exec(body))){const nm=(m[1].toLowerCase()==='i'?'i':'v')+'('+m[2].toLowerCase()+')',t=trs.find(x=>x.name.toLowerCase()===nm);if(t&&!seen.has(t.name)){seen.add(t.name);out.push(t)}}});return out}
+const trCol=(kind,trs,t)=>{const S=SEL[kind];return S.has(t.name)?COL[trs.filter(x=>S.has(x.name)).indexOf(t)%8]:COL[trs.indexOf(t)%8]};
 function chips(kind,R){const trs=R.tr,S=SEL[kind],sig=trs.map(t=>t.name).join();
-  if(S.sig!==sig){S.sig=sig;S.clear();trs.filter(t=>t.k==='v').slice(0,kind==='ac'?2:4).forEach(t=>S.add(t.name))}
-  return `<div class="chips">`+trs.map((t,i)=>`<label class="tr"><input type="checkbox" data-k="${kind}" value="${esc(t.name)}" ${S.has(t.name)?'checked':''}><i style="background:${COL[i%8]}"></i>${esc(t.name)}</label>`).join('')+'</div>'}
+  if(S.sig!==sig){S.sig=sig;S.clear();const cw=ctlTraces(trs);
+    if(cw.length)cw.forEach(t=>S.add(t.name));else trs.filter(t=>t.k==='v').slice(0,kind==='ac'?2:4).forEach(t=>S.add(t.name))}
+  return `<div class="chips">`+trs.map((t,i)=>`<label class="tr"><input type="checkbox" data-k="${kind}" value="${esc(t.name)}" ${S.has(t.name)?'checked':''}><i style="background:${trCol(kind,trs,t)}"></i>${esc(t.name)}</label>`).join('')+'</div>'}
 function opHTML(R){const C=R.C,x=R.op.x,rows=R.rows;
   return `<div class="two"><table><tr><th>Node</th><th>Voltage</th></tr>${Object.keys(C.idx).map(n=>`<tr><td>v(${esc(n)})</td><td>${eng(x[C.idx[n]])}V</td></tr>`).join('')}</table>
   <table><tr><th>Element</th><th>V across</th><th>I into n1</th><th>P absorbed</th></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${eng(r[1])}V</td><td>${eng(r[2])}A</td><td>${eng(r[3])}W</td></tr>`).join('')}</table></div>`}
@@ -640,7 +662,7 @@ function showTab(){
   let h='';const K=TAB;
   if(K==='op')h=opHTML(R);
   else if(!R[K])h=`<p class="hint">No ${{dc:'.dc',ac:'.ac',tran:'.tran'}[K]} analysis in the netlist — pick one from <b>＋ Analysis</b> above the editor, or type the dot-command.</p>`;
-  else{const tr=R.tr,cl=t=>COL[tr.indexOf(t)%8];h=chips(K,R);const sl=tr.filter(t=>SEL[K].has(t.name));
+  else{const tr=R.tr,cl=t=>trCol(K,tr,t);h=chips(K,R);const sl=tr.filter(t=>SEL[K].has(t.name));
     if(!sl.length)h+='<p class="hint">Tick a trace above.</p>';
     else if(K==='dc'){const d=R.dc;h+=plot({xs:d.xs,series:sl.map(t=>({name:t.name,ys:col(t,d.X),c:cl(t),u:t.k==='i'?'A':'V'})),xl:d.src+(d.cur?' (A)':' (V)'),yl:'V / A'},'dc')}
     else if(K==='tran'){const d=R.tran;h+=plot({xs:d.t,series:sl.map(t=>({name:t.name,ys:col(t,d.X),c:cl(t),u:t.k==='i'?'A':'V'})),xl:'time (s)',yl:'V / A'},'tr')}
@@ -653,10 +675,32 @@ function showTab(){
 function runSimUI(){stopAnim(true);hideTip();const t0=performance.now();let R;
   if(S.P.errs.length)R={errs:['Fix the netlist errors first (see Netlist tab)'],warn:[]};
   else try{R=runSim(S.P)}catch(err){R={errs:['Simulator error: '+err.message],warn:[]}}
-  R.ms=performance.now()-t0;RES=R;RUNSIG=($('#src')||{}).value;if(S.pickTab&&R.op){S.pickTab=false;TAB=['tran','ac','dc'].find(k=>R[k])||'op'}if(R.op&&TAB!=='op'&&!R[TAB])TAB='op';showTab()}
+  R.ms=performance.now()-t0;RES=R;RUNSIG=simSig(($('#src')||{}).value);{const ps=ctlLines(($('#src')||{}).value).map(x=>x.cmd+x.rest).join('\n');if(ps!==PLOTSIG){PLOTSIG=ps;Object.keys(SEL).forEach(k=>{SEL[k].sig=null})}}if(S.pickTab&&R.op){S.pickTab=false;TAB=['tran','ac','dc'].find(k=>R[k])||'op'}if(R.op&&TAB!=='op'&&!R[TAB])TAB='op';showTab()}
 const schedSim=()=>{if($('#auto').checked){clearTimeout(simT);simT=setTimeout(runSimUI,150)}};
 /* plot hover readout */
-$('#out').addEventListener('change',e=>{const c=e.target.closest('input[data-k]');if(!c)return;const S=SEL[c.dataset.k];c.checked?S.add(c.value):S.delete(c.value);showTab()});
+$('#out').addEventListener('change',e=>{const c=e.target.closest('input[data-k]');if(!c)return;const S=SEL[c.dataset.k];c.checked?S.add(c.value):S.delete(c.value);showTab();syncPlotCode(c.dataset.k)});
+/* Ticking a trace rewrites the plot / print line(s) of the NGSpice code (v(x) -> i(R2) ...) and asks for a re-run */
+function syncPlotCode(kind){const el=document.getElementById('src');if(!el||!RES||!RES.tr)return;
+  const sel=RES.tr.filter(t=>SEL[kind].has(t.name));if(!sel.length)return;
+  const vec=sel.map(t=>kind==='ac'?(t.k==='i'?'db('+t.name+')':'vdb('+t.name.slice(2,-1)+')'):t.name).join(' ');
+  let ls=el.value.split('\n');const L=ctlLines(el.value);
+  if(L.length){L.forEach(x=>{const opt=x.rest.split(CTL_OPT),first=opt[0],tail=x.rest.slice(first.length);ls[x.i]=x.ind+x.cmd+' '+vec+tail})}
+  else{const ci=ls.findIndex(l=>/^\s*\.control\b/i.test(l)),ei=ls.findIndex(l=>/^\s*\.endc\b/i.test(l));
+    if(ci>=0&&ei>ci)ls.splice(ei,0,'  plot '+vec);
+    else{const end=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l)),blk=['.control','  run','  plot '+vec,'.endc'];end>=0?ls.splice(end,0,...blk):ls.push(...blk)}}
+  const t=ls.join('\n');if(t===el.value)return;
+  /* keep the caret on the same line / column and keep the scroll position, so editing continues where it was */
+  const old=el.value,a=el.selectionStart,b=el.selectionEnd,sT=el.scrollTop,sL=el.scrollLeft,
+    lc=o=>{const h=old.slice(0,o).split('\n');return[h.length-1,h[h.length-1].length]};
+  const [al,ac]=lc(a),[bl,bc]=lc(b),pos=(l,c)=>{const q=t.split('\n');l=Math.min(l,q.length-1);let o=0;for(let i=0;i<l;i++)o+=q[i].length+1;return o+Math.min(c,q[l].length)};
+  /* extra lines inserted above the caret (new .control block) shift it down by the same amount */
+  const grow=t.split('\n').length-old.split('\n').length,firstNew=ls.findIndex((x,i)=>x!==old.split('\n')[i]);
+  const sh=l=>(grow>0&&firstNew>=0&&l>=firstNew)?l+grow:l;
+  el.value=t;try{el.setSelectionRange(pos(sh(al),ac),pos(sh(bl),bc))}catch(_){}
+  el.scrollTop=sT;el.scrollLeft=sL;
+  PLOTSIG=ctlLines(t).map(x=>x.cmd+x.rest).join('\n');
+  S_P_refresh();toast('Run Simulation again / Run the NGSpice code','info')}
+function S_P_refresh(){try{S.P=parse(src.value);gutter();showErrs(S.P)}catch(_){}}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){TAB=b.dataset.t;zoomReset(true);hideTip();if(ANIM.on&&RES&&RES.op&&RES[TAB])startAnim(TAB);else{stopAnim(true);showTab()}}};
 $('#bRun').onclick=runSimUI;
 $('#auto').onchange=e=>{if(e.target.checked)schedSim()};
@@ -867,22 +911,23 @@ function hlLine(l){
   toks.forEach(t=>{if(!t||/^\s+$/.test(t)){(seen<np?out+=t:rest+=t);return}
     if(seen<np){seen++;out+=`<span class="${t==='0'||/^gnd$/i.test(t)?'g':'n'}">${esc(t)}</span>`}else rest+=t});
   return out+hlGen(rest)}
+function syncScroll(){const h=$('#hl'),g=$('#gut');h.scrollTop=src.scrollTop;h.scrollLeft=src.scrollLeft;g.scrollTop=src.scrollTop}
 function highlight(){const bad=new Set(((S.P&&S.P.errs)||[]).map(x=>x.n));
-  $('#hl').innerHTML=src.value.split('\n').map((l,i)=>bad.has(i)?`<span class="lerr">${hlLine(l)||' '}</span>`:hlLine(l)).join('\n')+'\n'}
+  $('#hl').innerHTML=src.value.split('\n').map((l,i)=>bad.has(i)?`<span class="lerr">${hlLine(l)||' '}</span>`:hlLine(l)).join('\n')+'\n';syncScroll()}
 function gutter(){const n=src.value.split('\n').length;$('#gut').textContent=Array.from({length:n},(_,i)=>i+1).join('\n');highlight()}
-src.addEventListener('scroll',()=>{$('#gut').scrollTop=src.scrollTop;const h=$('#hl');h.scrollTop=src.scrollTop;h.scrollLeft=src.scrollLeft});
+src.addEventListener('scroll',syncScroll);['keyup','click','focus','select','touchmove'].forEach(ev=>src.addEventListener(ev,()=>requestAnimationFrame(syncScroll)));
 function showErrs(P){setTimeout(highlight,0);$('#nerr').innerHTML=(P.errs.length?P.errs.map(x=>`<div class="er">Line ${x.n+1}: ${esc(x.m)}</div>`).join(''):`<div class="ok">✓ ${P.els.length} elements · ${P.dirs.filter(d=>/^\.(op|dc|ac|tran)/i.test(d)).length} analyses</div>`)+P.warn.map(w=>`<div class="wn">⚠ ${esc(w)}</div>`).join('')}
-function onText(){stopAnim(true);{const t2=autoAnalyses(src.value);if(t2!==src.value){const c=src.selectionStart;src.value=t2;try{src.setSelectionRange(c,c)}catch(_){}}}
+function onText(auto){stopAnim(true);if(auto){const t2=autoAnalyses(src.value);if(t2!==src.value){const c=src.selectionStart,sT=src.scrollTop,sL=src.scrollLeft;src.value=t2;try{src.setSelectionRange(c,c)}catch(_){}src.scrollTop=sT;src.scrollLeft=sL}}
   const P=parse(src.value);S.P=P;gutter();showErrs(P);if(P.errs.length){schedSim();return}
   const sg=sigOf(P);
   if(sg===S.sig&&S.M.parts.length){P.els.forEach(e=>{const p=S.M.parts.find(q=>q.n===e.n);if(p)p.v=e.k==='V'||e.k==='I'?e.val:e.tail});S.M.dirs=P.dirs.slice();S.M.title=P.title}
   else{S.M=buildFromNetlist(P);S.sig=sg;S.sel.clear();S.selW=null;S.selNet=null;S.hist=[];S.fut=[];if(!S.touched)fit()}
   draw();updUndo();inspect();schedSim()}
-let txT;src.addEventListener('input',()=>{clearTimeout(txT);gutter();txT=setTimeout(onText,200)});
+let txT;src.addEventListener('input',()=>{clearTimeout(txT);gutter();txT=setTimeout(()=>onText(false),200)});
 $('#addan').onchange=ev=>{const k=ev.target.value;ev.target.value='';if(!k)return;const vs=S.P.els.find(x=>x.k==='V'),
   L={op:'.op',dc:`.dc ${vs?vs.n:'V1'} 0 5 0.1`,ac:'.ac dec 20 10 100k',tran:'.tran 10u 5m'}[k],ls=src.value.replace(/\s+$/,'').split('\n');
   if(k==='ac'&&vs&&vs.span===1&&!/\bac\b/i.test(vs.val))ls[vs.line]=`${vs.n} ${vs.nodes.join(' ')} ${vs.tail||vs.val} AC 1`.replace(/\s+/g,' ');
-  const ei=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l));ei>=0?ls.splice(ei,0,L):ls.push(L);src.value=ls.join('\n');if(k!=='op')TAB=k;onText()};
+  const ei=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l));ei>=0?ls.splice(ei,0,L):ls.push(L);src.value=ls.join('\n');if(k!=='op')TAB=k;onText(true)};
 $('#bCopy').onclick=async e=>{try{await navigator.clipboard.writeText(src.value)}catch(_){src.select();document.execCommand('copy')}e.target.textContent='Copied ✓';setTimeout(()=>e.target.textContent='Copy',1200)};
 function selTab(p){document.querySelectorAll('.stabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));$('#pProp').hidden=p!=='prop';$('#pNet').hidden=p!=='net';if(p==='net')gutter()}
 document.querySelector('.stabs').onclick=e=>{const b=e.target.closest('button');if(b)selTab(b.dataset.p)};
@@ -1009,8 +1054,9 @@ function endPtr(e){PT.delete(e.pointerId);if(!G)return;
 window.addEventListener('pointerup',endPtr);window.addEventListener('pointercancel',endPtr);
 $('#out').addEventListener('dblclick',e=>{if(e.target.closest('svg[data-geom]'))zoomReset()});
 /* ---------- examples, files, export ---------- */
-function loadText(t,desc){zoomReset(true);S.desc=desc||'';S.touched=false;S.sig='';src.value=t;S.pickTab=true;onText();fit()}
+function loadText(t,desc){zoomReset(true);S.desc=desc||'';S.touched=false;S.sig='';src.value=t;S.pickTab=true;onText(true);fit()}
 const topic=$('#topic'),exsel=$('#exsel');
+{let _n=0;TOPICS.forEach(t=>t.items.forEach(it=>{it.n=++_n}))}   /* one continuous 1..N numbering, no gaps */
 TOPICS.forEach((t,i)=>topic.add(new Option(`${i+1}. ${t.topic} (${t.items.length})`,i)));
 function fillEx(){exsel.innerHTML=TOPICS[topic.value].items.map(it=>`<option value="${it.n}">${it.n}. ${esc(it.title)}</option>`).join('')}
 function loadSel(){const it=TOPICS[topic.value].items.find(x=>x.n==exsel.value);if(it)loadText(it.net,it.desc)}
@@ -1075,10 +1121,10 @@ function svgString(){const b=bounds();if(!b)return null;const p=3,x=(b.x0-p)*U,y
   o+=`<path d="M${pad} ${Y}H${W-pad}" stroke="#c3d0de" stroke-width="1.5"/>`;Y+=16;
   o+=`<g transform="translate(${pad} ${Y})">${sim.body}</g>`;Y+=sim.h+pad;
   return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${Y}" width="${W}" height="${Y}" font-family="${EXFONT}"><rect width="${W}" height="${Y}" fill="#fff"/>${o}</svg>`}
-function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','alert');document.body.appendChild(t)}
-  t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),3200)}
+function toast(msg,kind){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','alert');document.body.appendChild(t)}
+  t.textContent=msg;t.classList.toggle('info',kind==='info');t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),kind==='info'?4500:3200)}
 /* Download is allowed only after a successful run of the CURRENT netlist; the graph/legend/tables are read live, so ticking/unticking traces (checkboxes) or re-running is always reflected */
-function exReady(){const o=$('#out'),ok=RES&&RES.op&&!(RES.errs&&RES.errs.length)&&RUNSIG!==null&&RUNSIG===$('#src').value&&o&&o.innerHTML.trim();
+function exReady(){const o=$('#out'),ok=RES&&RES.op&&!(RES.errs&&RES.errs.length)&&RUNSIG!==null&&RUNSIG===simSig($('#src').value)&&o&&o.innerHTML.trim();
   if(!ok)toast('Please Run Simulation First, then Download Image.');return !!ok}
 $('#bSvg').onclick=()=>{if(!exReady())return;const s=svgString();if(s)dl(fname()+'.svg',new Blob([s],{type:'image/svg+xml'}))};
 $('#bPng').onclick=()=>{if(!exReady())return;const s=svgString();if(!s)return;const m=/viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(s),k=Math.min(2,8000/Math.max(+m[1],+m[2])),w=Math.round(+m[1]*k),h=Math.round(+m[2]*k),img=new Image();
@@ -1092,6 +1138,73 @@ $('#bTheme').onclick=()=>{const r=document.documentElement,d=getComputedStyle(r)
   sp.addEventListener('pointerdown',e=>{on=true;sp.setPointerCapture(e.pointerId)});
   sp.addEventListener('pointermove',e=>{if(!on)return;const r=ct.getBoundingClientRect();ct.classList.remove('min','big');$('#dockB').textContent='⤢';ct.style.setProperty('--dockH',Math.max(100,Math.min(r.height-260,r.bottom-e.clientY))+'px');setVB()});
   sp.addEventListener('pointerup',()=>{on=false;if(!S.touched)fit()})})();
+/* ---------- drag-to-resize: Components panel + Properties / Editable NGSpice panel ---------- */
+(function(){
+  const work=document.querySelector('.work'),pal=document.querySelector('.palette'),side=document.querySelector('.side');
+  const hP=$('#rzPal'),hS=$('#rzSide');if(!work||!pal||!side||!hP||!hS)return;
+  const stacked=()=>matchMedia('(max-width:1100px)').matches;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const MINW=150,MINC=300,MINH=120;
+  function relayout(){setVB();if(!S.touched)fit();gutter()}
+  let raf=0;const soft=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;setVB()})};
+  function attach(h,panel,side_){
+    let st=null;
+    h.addEventListener('pointerdown',e=>{
+      if(e.button!==undefined&&e.button!==0&&e.pointerType==='mouse')return;
+      e.preventDefault();const r=panel.getBoundingClientRect(),w=work.getBoundingClientRect();
+      st={x:e.clientX,y:e.clientY,w:r.width,h:r.height,ww:w.width};
+      try{h.setPointerCapture(e.pointerId)}catch(_){}
+      h.classList.add('drag');document.body.classList.add('rzing');
+    });
+    h.addEventListener('pointermove',e=>{
+      if(!st)return;
+      if(stacked()){
+        // single-column layout: the panel grows / shrinks in height
+        const dy=e.clientY-st.y,nh=clamp(st.h+(side_==='right'?-dy:dy),MINH,Math.max(MINH,innerHeight*1.6));
+        panel.style.setProperty(side_==='right'?'--sideH':'--palH',nh+'px');
+      }else{
+        const dx=e.clientX-st.x,other=side_==='right'?pal.getBoundingClientRect().width:side.getBoundingClientRect().width;
+        const maxW=Math.max(MINW,st.ww-other-MINC-40);
+        const nw=clamp(st.w+(side_==='right'?-dx:dx),MINW,maxW);
+        work.style.setProperty(side_==='right'?'--sideW':'--palW',nw+'px');
+      }
+      soft();
+    });
+    const end=e=>{if(!st)return;st=null;h.classList.remove('drag');document.body.classList.remove('rzing');try{h.releasePointerCapture(e.pointerId)}catch(_){}relayout()};
+    h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
+    // double-click / double-tap = back to default size
+    h.addEventListener('dblclick',()=>{
+      if(side_==='right'){work.style.removeProperty('--sideW');side.style.removeProperty('--sideH')}
+      else{work.style.removeProperty('--palW');pal.style.removeProperty('--palH')}
+      setTimeout(relayout,30);
+    });
+    // keyboard: arrow keys nudge the size
+    h.addEventListener('keydown',e=>{
+      const k=e.key;if(!/^Arrow(Left|Right|Up|Down)$/.test(k))return;e.preventDefault();
+      const step=e.shiftKey?60:20,r=panel.getBoundingClientRect();
+      if(stacked()){
+        const d=(k==='ArrowDown'?1:k==='ArrowUp'?-1:0)*step;if(!d)return;
+        panel.style.setProperty(side_==='right'?'--sideH':'--palH',clamp(r.height+(side_==='right'?-d:d),MINH,innerHeight*1.6)+'px');
+      }else{
+        const d=(k==='ArrowRight'?1:k==='ArrowLeft'?-1:0)*step;if(!d)return;
+        const other=side_==='right'?pal.getBoundingClientRect().width:side.getBoundingClientRect().width,
+          maxW=Math.max(MINW,work.getBoundingClientRect().width-other-MINC-40);
+        work.style.setProperty(side_==='right'?'--sideW':'--palW',clamp(r.width+(side_==='right'?-d:d),MINW,maxW)+'px');
+      }
+      relayout();
+    });
+  }
+  attach(hP,pal,'left');attach(hS,side,'right');
+  // keep the schematic viewBox correct whenever the canvas changes size (panel drag, window resize, rotate phone)
+  if(window.ResizeObserver){new ResizeObserver(()=>soft()).observe(document.getElementById('cv'))}
+  addEventListener('resize',()=>{
+    // drop inline sizes that no longer fit the window
+    const w=work.getBoundingClientRect().width;
+    const pw=parseFloat(work.style.getPropertyValue('--palW'))||0,sw=parseFloat(work.style.getPropertyValue('--sideW'))||0;
+    if(pw+sw+MINC+40>w){work.style.removeProperty('--palW');work.style.removeProperty('--sideW')}
+    soft();
+  });
+})();
 const toggleDock=()=>{const ct=document.querySelector('.center');ct.style.removeProperty('--dockH');ct.classList.remove('big');$('#dockB').textContent='⤢';ct.classList.toggle('min');$('#dockT').textContent=ct.classList.contains('min')?'▴':'▾';setTimeout(()=>{setVB();if(!S.touched)fit()},220)};
 const toggleBig=()=>{const ct=document.querySelector('.center');ct.style.removeProperty('--dockH');ct.classList.remove('min');$('#dockT').textContent='▾';ct.classList.toggle('big');$('#dockB').textContent=ct.classList.contains('big')?'⤡':'⤢';setTimeout(()=>{setVB();if(!S.touched)fit()},220)};
 $('#dockB').onclick=toggleBig;$('#dockT').onclick=toggleDock;$('#split').addEventListener('dblclick',toggleDock);
