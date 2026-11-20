@@ -129,7 +129,7 @@
     <div class="stabs"><button data-p="prop" class="on">Properties</button><button data-p="net" >Editable NGSpice</button></div>
     <div id="pProp" class="spanel"></div>
     <div id="pNet" class="spanel" hidden>
-      <div class="nbar"><select id="addan" aria-label="Add analysis"><option value="">＋ Analysis</option><option value="op">.op</option><option value="dc">.dc sweep</option><option value="ac">.ac sweep</option><option value="tran">.tran</option></select><button id="bCopy">Copy</button><button id="bRunNet" class="run" title="Run simulation"> ▶ </button><span class="hint">Edit NGSpice Code and Run</span></div>
+      <div class="nbar"><select id="addan" aria-label="Add analysis"><option value="">＋ Analysis</option><option value="op">.op</option><option value="dc">.dc sweep</option><option value="ac">.ac sweep</option><option value="tran">.tran</option><option value="ctl">.control plot / print</option></select><button id="bCopy">Copy</button><button id="bRunNet" class="run" title="Run simulation"> ▶ </button><span class="hint">Edit NGSpice Code and Run</span></div>
       <div class="editor"><pre id="gut" aria-hidden="true"></pre><div class="cwrap"><pre id="hl" aria-hidden="true"></pre><textarea id="src" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="NGspice netlist"></textarea></div></div>
       <div id="nerr"></div>
     </div>
@@ -150,12 +150,8 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
         About Me</a>
       <a href="https://anispice.vercel.app" target="_blank" rel="noopener noreferrer">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="6" y="6" width="12" height="12" rx="2"/>
-        <rect x="9" y="9" width="6" height="6"/>
-        <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>
-      </svg>
-      AniSpice Circuit Simulator</a>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2-6 4 12 3-9 2 3h5"/></svg>
+        AniSpice Circuit Simulator</a>
     </nav>
   </div>
   <div class="foot-copy">&copy; <span id="yr">2026 -</span> NGSpice Circuit Simulator Studio &middot; Built with NGSpice</div>
