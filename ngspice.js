@@ -672,7 +672,12 @@ function showTab(){
       if(j>0){const f=Math.pow(10,Math.log10(a.f[j-1])+(ref-3-s0.db[j-1])/(s0.db[j]-s0.db[j-1])*(Math.log10(a.f[j])-Math.log10(a.f[j-1])));h+=`<p class="hint">−3 dB below the low-frequency level of ${esc(s0.name)} at ≈ <b>${eng(f)}Hz</b></p>`}
       h+=plot({xs:a.f,xlog:lg,series:S2.map(s=>({name:s.name,ys:s.ph,c:s.c,u:'°'})),xl:'frequency (Hz)',yl:'phase (°)'},'ap')}}
   o.innerHTML=h;if(ANIM.on&&ANIM.idx!=null)paintAll(ANIM.idx);if(CUR.i!=null)paintCursor(CUR.i)}
-function runSimUI(){stopAnim(true);hideTip();const t0=performance.now();let R;
+const CTL_MSG='Please use .control run plot/print using + analysis';
+/* the simulation runs only when the NGSpice code has a .control block with a plot / print line */
+const hasCtl=t=>ctlLines(t).length>0;
+function runSimUI(){stopAnim(true);hideTip();
+  if(!hasCtl(($('#src')||{}).value)){RES=null;RUNSIG=null;showTab();$('#simst').innerHTML=`<span class="er">${esc(CTL_MSG)}</span>`;$('#out').innerHTML=`<p class="empty">${esc(CTL_MSG)}</p>`;toast(CTL_MSG);return}
+  const t0=performance.now();let R;
   if(S.P.errs.length)R={errs:['Fix the netlist errors first (see Netlist tab)'],warn:[]};
   else try{R=runSim(S.P)}catch(err){R={errs:['Simulator error: '+err.message],warn:[]}}
   R.ms=performance.now()-t0;RES=R;RUNSIG=simSig(($('#src')||{}).value);{const ps=ctlLines(($('#src')||{}).value).map(x=>x.cmd+x.rest).join('\n');if(ps!==PLOTSIG){PLOTSIG=ps;Object.keys(SEL).forEach(k=>{SEL[k].sig=null})}}if(S.pickTab&&R.op){S.pickTab=false;TAB=['tran','ac','dc'].find(k=>R[k])||'op'}if(R.op&&TAB!=='op'&&!R[TAB])TAB='op';showTab()}
@@ -778,7 +783,10 @@ function autoAnalyses(text){
   const ls=text.replace(/\s+$/,'').split('\n'),ei=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l));
   ei>=0?ls.splice(ei,0,...add):ls.push(...add);
   return ls.join('\n')}
-function writeText(t){t=autoAnalyses(t);src.value=t;S.P=parse(t);S.sig=sigOf(S.P);gutter();showErrs(S.P)}
+function ctlBlockOf(text){const ls=String(text||'').split('\n'),ci=ls.findIndex(l=>/^\s*\.control\b/i.test(l)),ei=ci<0?-1:ls.findIndex((l,i)=>i>ci&&/^\s*\.endc\b/i.test(l));return ci>=0&&ei>ci&&ctlLines(text).length?ls.slice(ci,ei+1):null}
+function writeText(t,fresh){t=autoAnalyses(t);
+  if(!fresh&&!ctlLines(t).length){const keep=ctlBlockOf(src.value);if(keep){const ls=t.replace(/\s+$/,'').split('\n'),end=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l));end>=0?ls.splice(end,0,...keep):ls.push(...keep);t=ls.join('\n')}}
+  src.value=t;S.P=parse(t);S.sig=sigOf(S.P);gutter();showErrs(S.P)}
 function afterEdit(keep){stopAnim(true);const X=extract(S.M);S.M.wires.forEach(w=>{const g=X.segs.find(s=>s.w===w);if(g&&g.net)w.net=g.net});
   writeText(genNetlist(S.M));draw();updUndo();if(keep)codePreview();else inspect();schedSim()}
 function normPts(pts){const o=[];pts.forEach(q=>{if(!o.length||o[o.length-1][0]!==q[0]||o[o.length-1][1]!==q[1])o.push([q[0],q[1]])});
@@ -924,7 +932,30 @@ function onText(auto){stopAnim(true);if(auto){const t2=autoAnalyses(src.value);i
   else{S.M=buildFromNetlist(P);S.sig=sg;S.sel.clear();S.selW=null;S.selNet=null;S.hist=[];S.fut=[];if(!S.touched)fit()}
   draw();updUndo();inspect();schedSim()}
 let txT;src.addEventListener('input',()=>{clearTimeout(txT);gutter();txT=setTimeout(()=>onText(false),200)});
-$('#addan').onchange=ev=>{const k=ev.target.value;ev.target.value='';if(!k)return;const vs=S.P.els.find(x=>x.k==='V'),
+/* + Analysis -> ".control plot / print": inserts the run / plot / print block. The traces are the ones ticked in the
+   simulation window (or v(in) v(out) / the first nodes before any run), so the checkboxes keep driving these lines. */
+function ctlTraceList(){
+  let names=[];
+  if(RES&&RES.tr){const k=(TAB!=='op'&&RES[TAB])?TAB:['tran','ac','dc'].find(q=>RES[q]);
+    if(k&&SEL[k]&&SEL[k].size)names=RES.tr.filter(t=>SEL[k].has(t.name)).map(t=>t.name);
+    if(!names.length)names=RES.tr.filter(t=>t.k==='v').slice(0,2).map(t=>t.name)}
+  if(!names.length){const P=S.P,nets=[];((P&&P.els)||[]).forEach(e=>(e.nodes||[]).forEach(n=>{n=String(n).toLowerCase();if(n!=='0'&&n!=='gnd'&&!nets.includes(n))nets.push(n)}));
+    const pick=['in','out'].filter(n=>nets.includes(n));(pick.length?pick:nets.slice(0,2)).forEach(n=>names.push('v('+n+')'));
+    if(!names.length)names=['v(in)','v(out)']}
+  return names.join(' ')}
+/* returns the lines with the run / plot / print block added (inside an existing .control block, or as a new one before .end); null when it is already there */
+function ctlInsert(ls,vec){
+  const body=['  plot '+vec,'  print '+vec,'  * you can use it using simulation checkbox output'],
+    ci=ls.findIndex(l=>/^\s*\.control\b/i.test(l)),ei=ci<0?-1:ls.findIndex((l,i)=>i>ci&&/^\s*\.endc\b/i.test(l));
+  if(hasCtl(ls.join('\n')))return null;
+  if(ci>=0&&ei>ci)ls.splice(ei,0,...body);
+  else{const end=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l)),blk=['.control','run',...body,'.endc'];end>=0?ls.splice(end,0,...blk):ls.push(...blk)}
+  return ls}
+function addCtlBlock(){
+  const ls=ctlInsert(src.value.replace(/\s+$/,'').split('\n'),ctlTraceList());
+  if(!ls){toast('A plot / print line already exists in the .control block','info');return}
+  src.value=ls.join('\n');PLOTSIG=null;onText(true)}
+$('#addan').onchange=ev=>{const k=ev.target.value;ev.target.value='';if(!k)return;if(k==='ctl'){addCtlBlock();return}const vs=S.P.els.find(x=>x.k==='V'),
   L={op:'.op',dc:`.dc ${vs?vs.n:'V1'} 0 5 0.1`,ac:'.ac dec 20 10 100k',tran:'.tran 10u 5m'}[k],ls=src.value.replace(/\s+$/,'').split('\n');
   if(k==='ac'&&vs&&vs.span===1&&!/\bac\b/i.test(vs.val))ls[vs.line]=`${vs.n} ${vs.nodes.join(' ')} ${vs.tail||vs.val} AC 1`.replace(/\s+/g,' ');
   const ei=ls.findIndex(l=>/^\s*\.end\s*$/i.test(l));ei>=0?ls.splice(ei,0,L):ls.push(L);src.value=ls.join('\n');if(k!=='op')TAB=k;onText(true)};
@@ -1057,11 +1088,18 @@ $('#out').addEventListener('dblclick',e=>{if(e.target.closest('svg[data-geom]'))
 function loadText(t,desc){zoomReset(true);S.desc=desc||'';S.touched=false;S.sig='';src.value=t;S.pickTab=true;onText(true);fit()}
 const topic=$('#topic'),exsel=$('#exsel');
 {let _n=0;TOPICS.forEach(t=>t.items.forEach(it=>{it.n=++_n}))}   /* one continuous 1..N numbering, no gaps */
+/* every example of every topic carries the  .control / run / plot / print  block (traces = what the simulation shows by default) */
+const EX_PLOT={"Voltage divider":"v(in) v(out)","Series resistors":"v(1) v(2) v(3)","Parallel resistors":"v(in)","Loaded voltage divider":"v(vcc) v(mid)","Wheatstone bridge":"v(top) v(a) v(b)","Superposition with two sources":"v(1) v(2) v(3)","Current source feeding a resistor network":"v(1) v(2)","R-2R ladder DAC (3 bit, code 101)":"v(n2) v(n1) v(n0)","Delta network with loads":"v(a) v(b) v(c)","Maximum power transfer":"v(1) v(2)","RC charge and discharge (square wave)":"v(in) v(out)","Slow RC (τ = 1 ms with 10 kΩ and 100 nF)":"v(in) v(out)","RL step response":"v(in) v(out)","RC differentiator":"v(in) v(out)","RC integrator (square wave to triangle)":"v(in) v(out)","Series RLC, underdamped":"v(in) v(a) v(b)","Series RLC, overdamped":"v(in) v(a) v(b)","Series RLC, critically damped":"v(in) v(a) v(b)","Parallel RLC ringing (current impulse)":"v(n)","Two-stage RC network":"v(in) v(a) v(b)","Capacitor charged through a Thevenin divider":"v(in) v(a)","Charge sharing between two capacitors":"v(in) v(a) v(b)","RC low-pass (fc ≈ 1.59 kHz)":"v(in) v(out)","RC high-pass":"v(in) v(out)","RL low-pass":"v(in) v(out)","RL high-pass":"v(in) v(out)","Series RLC band-pass (Q = 10)":"v(in) v(a) v(out)","Series LC notch (band-stop)":"v(in) v(out) v(m)","Parallel LC resonant band-pass":"v(in) v(out)","Second-order LC low-pass":"v(in) v(out)","Second-order CL high-pass":"v(in) v(out)","Twin-T notch filter (fn ≈ 1.59 kHz)":"v(in) v(a) v(out) v(b)","Wien bridge network (peak gain 1/3 at 1.59 kHz)":"v(in) v(a) v(out)","Two-stage RC low-pass (−40 dB/dec)":"v(in) v(a) v(out)","Three-stage RC phase-shift network":"v(in) v(a) v(b) v(out)","Lead network":"v(in) v(out)","Lag network":"v(in) v(out) v(m)","Pi (C-L-C) filter between 50 Ω terminations":"v(src) v(in) v(out)","Diode forward I-V curve":"v(in) v(a)","Reverse-biased diode":"v(in) v(a)","Half-wave rectifier (no filter)":"v(in) v(out)","Half-wave rectifier with filter capacitor":"v(in) v(out)","Full-wave bridge rectifier":"v(a) v(b) v(p)","Center-tapped full-wave rectifier":"v(a) v(b) v(out)","Positive clipper (limits at about +0.7 V)":"v(in) v(out)","Bidirectional clipper (±0.7 V)":"v(in) v(out)","Biased clipper (limits near 2.7 V)":"v(in) v(ref) v(out)","Diode clamper (DC restorer)":"v(in) v(out)","Voltage doubler":"v(in) v(a) v(out)","Three series diodes as a voltage reference":"v(in) v(a) v(b) v(c)","Diode AND gate":"v(vcc) v(a) v(b) v(y)","Diode OR gate":"v(a) v(b) v(y)","LED with current-limiting resistor":"v(1) v(a)","Low-drop versus standard silicon diode":"v(in) v(a) v(b)","Fixed-bias common emitter (supply sweep)":"v(vcc) v(b) v(c)","BJT output characteristics (Ib = 20 µA)":"v(b) v(c)","Voltage-divider bias with emitter resistor":"v(vcc) v(b) v(c) v(e)","BJT as a saturated switch":"v(vcc) v(in) v(b) v(c)","Emitter follower":"v(vcc) v(in) v(e)","Common-emitter amplifier: frequency response":"v(vcc) v(in) v(b) v(c)","Common-emitter amplifier: transient":"v(vcc) v(in) v(b) v(c)","Common-base amplifier":"v(vcc) v(in) v(e) v(b)","BJT current mirror":"v(vcc) v(c1) v(out)","Differential pair":"v(vcc) v(vee) v(in1) v(in2)","Darlington emitter follower":"v(vcc) v(b) v(e1) v(e)","PNP common-emitter stage":"v(vcc) v(b) v(c)","Complementary push-pull follower (crossover distortion)":"v(vcc) v(vee) v(in) v(out)","Constant-current source with diode reference":"v(vcc) v(b) v(m) v(c)","NMOS transfer characteristic":"v(vdd) v(g) v(d)","NMOS output characteristic (Vgs = 3 V)":"v(g) v(d)","Common-source stage with gate-voltage sweep":"v(vdd) v(g) v(d)","Common-source amplifier: transient":"v(vdd) v(g) v(d)","Common-source amplifier: frequency response":"v(vdd) v(in) v(g) v(d)","Source follower":"v(vdd) v(in) v(s)","NMOS inverter with resistive load":"v(vdd) v(in) v(out)","CMOS inverter transfer curve":"v(vdd) v(in) v(out)","CMOS inverter transient with load capacitor":"v(vdd) v(in) v(out)","NMOS current mirror":"v(vdd) v(g) v(out)","NMOS differential pair":"v(vdd) v(s) v(in1) v(in2)","NMOS pass transistor with capacitive load":"v(in) v(g) v(out)","VCVS amplifier (gain 10)":"v(in) v(out)","VCCS transconductance stage":"v(in) v(out)","Inverting amplifier (gain −10)":"v(in) v(inv) v(out)","Non-inverting amplifier (gain 10)":"v(in) v(out) v(inv)","Voltage follower (buffer)":"v(in) v(out)","Summing amplifier":"v(inv) v(out)","Difference amplifier":"v(inv) v(out)","Op-amp integrator":"v(in) v(inv) v(out)","Op-amp differentiator":"v(in) v(x) v(inv) v(out)","Active low-pass filter (fc ≈ 1 kHz, gain −1)":"v(in) v(inv) v(out)","Active high-pass filter (fc ≈ 1 kHz, gain −1)":"v(in) v(a) v(inv) v(out)","Sallen-Key low-pass (Butterworth, fc ≈ 1.6 kHz)":"v(in) v(a) v(b) v(out)","Exponentially damped sine":"v(in)","Square wave through an RC low-pass (harmonic filtering)":"v(in) v(out)","Arbitrary PWL stimulus":"v(in) v(out)","Two series sine sources (100 Hz beat)":"v(a) v(b)","Bridge rectifier with reservoir capacitor (ripple)":"v(a) v(b) v(p)","Series-pass regulator (LED reference)":"v(vin) v(b) v(out)","Third-order Butterworth LC low-pass (fc = 1 kHz, 50 Ω)":"v(src) v(in) v(out)","LC delay line (4 sections, Z0 ≈ 32 Ω)":"v(src) v(a) v(b) v(c)","555 astable LED blinker (1.4 s)":"v(vcc) v(disch) v(trig) v(ctrl)","555 astable 1 kHz clock":"v(vcc) v(disch) v(trig) v(ctrl)","555 astable with 50 % duty (diode steering)":"v(vcc) v(disch) v(trig) v(ctrl)","555 monostable one-shot (≈11 ms)":"v(vcc) v(trg) v(cap) v(ctrl)","555 Schmitt trigger":"v(vcc) v(in) v(ctrl) v(out)","555 PWM via control voltage":"v(vcc) v(ctrl) v(disch) v(trig)","555 bistable (set / reset latch)":"v(vcc) v(set) v(rst) v(ctrl)","CMOS inverter from MOSFETs (transfer curve)":"v(vdd) v(in) v(out)","NOT gate (CMOS inverter cell)":"v(vdd) v(a) v(y)","Buffer (two inverters)":"v(vdd) v(a) v(y)","AND gate":"v(vdd) v(a) v(b) v(y)","NAND gate":"v(vdd) v(a) v(b) v(y)","OR gate":"v(vdd) v(a) v(b) v(y)","NOR gate":"v(vdd) v(a) v(b) v(y)","XOR gate":"v(vdd) v(a) v(b) v(y)","XNOR gate":"v(vdd) v(a) v(b) v(y)","3-input NAND gate":"v(vdd) v(a) v(b) v(c)","3-input NOR gate":"v(vdd) v(a) v(b) v(c)","3-input AND gate":"v(vdd) v(a) v(b) v(c)","3-input OR gate":"v(vdd) v(a) v(b) v(c)","Half adder (XOR + AND)":"v(vdd) v(a) v(b) v(sum)","Full adder (2 XOR + 2 AND + OR)":"v(vdd) v(a) v(b) v(c)","SR latch from two NOR gates":"v(vdd) v(s) v(r) v(q)","555 clock gated by an AND gate":"v(vdd) v(disch) v(trig) v(ctrl)","Triangle wave through an RC low-pass":"v(in) v(out)","Sawtooth wave into a diode clipper":"v(in) v(out)","Noise source through an RC low-pass":"v(in) v(out)","Noisy sine cleaned by an RC filter":"v(a) v(in) v(out)"};
+function exVec(it){
+  if(EX_PLOT[it.title])return EX_PLOT[it.title];
+  try{const P=parse(it.net),nets=[];P.els.forEach(e=>(e.nodes||[]).forEach(n=>{n=String(n).toLowerCase();if(n!=='0'&&n!=='gnd'&&!nets.includes(n))nets.push(n)}));
+    const pick=['in','out'].filter(n=>nets.includes(n));return(pick.length?pick:nets.slice(0,2)).map(n=>'v('+n+')').join(' ')||'v(in) v(out)'}catch(_){return'v(in) v(out)'}}
+TOPICS.forEach(t=>t.items.forEach(it=>{const ls=ctlInsert(String(it.net).replace(/\s+$/,'').split('\n'),exVec(it));if(ls)it.net=ls.join('\n')+'\n'}));
 TOPICS.forEach((t,i)=>topic.add(new Option(`${i+1}. ${t.topic} (${t.items.length})`,i)));
 function fillEx(){exsel.innerHTML=TOPICS[topic.value].items.map(it=>`<option value="${it.n}">${it.n}. ${esc(it.title)}</option>`).join('')}
 function loadSel(){const it=TOPICS[topic.value].items.find(x=>x.n==exsel.value);if(it)loadText(it.net,it.desc)}
 topic.onchange=()=>{fillEx();loadSel()};exsel.onchange=loadSel;
-$('#bNew').onclick=()=>{S.M=newModel();S.sel.clear();S.selW=null;S.hist=[];S.fut=[];S.desc='';S.touched=false;writeText(genNetlist(S.M));draw();inspect();fit();RES=null;showTab()};
+$('#bNew').onclick=()=>{S.M=newModel();S.sel.clear();S.selW=null;S.hist=[];S.fut=[];S.desc='';S.touched=false;writeText(genNetlist(S.M),true);draw();inspect();fit();RES=null;showTab()};
 $('#bOpen').onclick=()=>$('#fileIn').click();
 $('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
   /* Open: normalise the text (BOM, CRLF/CR), load it, then ALWAYS run the simulation right away (even if Auto-run is off) so every analysis in the file (.op .dc .ac .tran) is computed and the right result tab is shown */
