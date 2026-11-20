@@ -1249,5 +1249,5 @@ $('#dockB').onclick=toggleBig;$('#dockT').onclick=toggleDock;$('#split').addEven
 addEventListener('resize',()=>{setVB();if(!S.touched)fit()});
 /* ---------- start ---------- */
 buildPalette();selTab('prop');
-topic.value=4;fillEx();exsel.value=60;
+topic.value=0;fillEx();exsel.value=1;
 const it0=TOPICS[4].items.find(x=>x.n===60);loadText(it0.net,it0.desc);setTool('select');updUndo();
