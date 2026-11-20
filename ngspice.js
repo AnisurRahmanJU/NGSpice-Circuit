@@ -1250,4 +1250,4 @@ addEventListener('resize',()=>{setVB();if(!S.touched)fit()});
 /* ---------- start ---------- */
 buildPalette();selTab('prop');
 topic.value=0;fillEx();exsel.value=1;
-const it0=TOPICS[4].items.find(x=>x.n===60);loadText(it0.net,it0.desc);setTool('select');updUndo();
+const it0=TOPICS[0].items.find(x=>x.n===1);loadText(it0.net,it0.desc);setTool('select');updUndo();
