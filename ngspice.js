@@ -1002,7 +1002,7 @@ function ctlTraceList(){
   return names.join(' ')}
 /* returns the lines with the run / plot / print block added (inside an existing .control block, or as a new one before .end); null when it is already there */
 function ctlInsert(ls,vec){
-  const body=['  plot '+vec,'  print '+vec,'  * you can use it using simulation checkbox output'],
+  const body=['  plot '+vec,'  print '+vec,'  * You can update simulation using checkbox'],
     ci=ls.findIndex(l=>/^\s*\.control\b/i.test(l)),ei=ci<0?-1:ls.findIndex((l,i)=>i>ci&&/^\s*\.endc\b/i.test(l));
   if(hasCtl(ls.join('\n')))return null;
   if(ci>=0&&ei>ci)ls.splice(ei,0,...body);
