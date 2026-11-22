@@ -17,7 +17,7 @@
     const vf = key && Math.abs(vfm - VF[key]) <= 0.5 ? VF[key] : vfm;
     return { v, i, vf, key, tab: key ? VF[key] : null };
   }
-  window.FX = { get: (p) => { const v = vals.get(p.id); return v ? { l: v.l, a: v.a, s: v.s, t: v.t, w: v.w } : { l: 0, a: 0, s: 0, t: '', w: 0 }; } };
+  window.FX = { get: (p) => { const v = vals.get(p.id); return v ? { l: v.l, a: v.a, s: Math.abs(v.s), sd: v.s, t: v.t, w: v.w } : { l: 0, a: 0, s: 0, sd: 0, t: '', w: 0 }; } };
   let last = 0, rvR = null, rv = 12, dvR = null, dv = null;
   const live = () => typeof SIMLIVE !== 'undefined' && SIMLIVE && RES && RES.op && RES.C && !(RES.errs && RES.errs.length);
   /* A circuit driven only by plain DC sources (no SIN/PULSE/PWL/AC source) and with no C / L / 555 is in steady state:
@@ -113,7 +113,8 @@
     const v = V(d.a) - V(d.b);
     if (k === 'v') return v;
     if (k === 'l') { if (d.t !== 'D') return null; const vt = 0.02585 * d.nf; return d.is * (Math.exp(Math.min(v / vt, 80)) - 1); }
-    return Math.abs(v) / R;
+    /* Fan = DC motor: the sign of the voltage decides the direction (v > 0 clockwise, v < 0 anticlockwise) */
+    return k === 'f' ? v / R : Math.abs(v) / R;
   }
   function fm(v, u) {
     if (!isFinite(v)) return '---';
@@ -148,7 +149,14 @@
         if (g > 0) { const d = dev(p.n); if (d && d.t === 'D') { const L = ledInfo(p, d, x); g *= Math.max(0, Math.min(1, (L.v - (L.vf - 0.5)) / 0.25)); } }
         v.l = ease(v.l, g, 0.03, 0.05); if (v.l < 0.004) v.l = 0;
       }
-      else if (k === 'f') { v.s = ease(v.s, ok ? Math.max(0, Math.min(1, (t - 0.12) / 0.88)) : 0, 0.5, 0.3); if (v.s < 0.01) v.s = 0; v.a = (v.a + v.s * 1100 * dt) % 360; v.w = (v.w + v.s * 240 * dt) % 360; }
+      else if (k === 'f') {
+        /* signed speed: + = clockwise, - = anticlockwise. DC: steady (battery or fan flipped = other direction).
+           AC: the polarity reverses every half-cycle, so the DC fan runs both ways (clockwise <-> anticlockwise). */
+        const m = ok ? Math.sign(t) * Math.max(0, Math.min(1, (Math.abs(t) - 0.12) / 0.88)) : 0;
+        v.s += (m - v.s) * (1 - Math.exp(-dt / (Math.abs(m) > Math.abs(v.s) ? 0.5 : 0.3)));
+        if (Math.abs(v.s) < 0.01) v.s = 0;
+        v.a = (((v.a + v.s * 1100 * dt) % 360) + 360) % 360; v.w = (((v.w + v.s * 240 * dt) % 360) + 360) % 360;
+      }
       else v.t = ok ? fm(t, k === 'a' ? 'A' : 'V') : '';
     });
     /* an LED that is reverse-biased (battery / source the wrong way round) can never glow: say so in the status bar,
@@ -196,8 +204,8 @@
         case 'halo': case 'lit': case 'fil': case 'ledhalo': case 'ledlit': case 'ledrays': o(v.l); break;
         case 'ledcore': o(v.l * 0.85); break;
         case 'rotor': el.setAttribute('transform', 'rotate(' + v.a.toFixed(1) + ')'); break;
-        case 'blur': o(v.s * 0.35); break;
-        case 'wind': o(Math.min(1, v.s * 1.4)); el.setAttribute('transform', 'rotate(' + v.w.toFixed(1) + ')'); break;
+        case 'blur': o(Math.abs(v.s) * 0.35); break;
+        case 'wind': o(Math.min(1, Math.abs(v.s) * 1.4)); el.setAttribute('transform', 'rotate(' + v.w.toFixed(1) + ')'); break;
         case 'txt': if (el.textContent !== v.t) el.textContent = v.t; break;
         case 'pwr': el.setAttribute('fill', v.t ? '#46ff7a' : '#1b3a25'); break;
       }
