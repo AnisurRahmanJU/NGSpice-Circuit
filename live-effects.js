@@ -171,7 +171,7 @@
           const key = bad + '|' + srcN;
           if (sh.dataset.rvk !== key) {
             if (sh.dataset.rv == null) sh.dataset.rv = sh.textContent;
-            sh.dataset.rvk = key; sh.textContent = '⚠ LED is reverse-biased, so it cannot glow. ';
+            sh.dataset.rvk = key; sh.textContent = '⚠ LED is reverse-biased, so it cannot glow. '; sh.style.color = 'var(--err, #d64545)'; sh.style.fontWeight = '600';
             if (srcN) {
               const bt = document.createElement('button');
               bt.textContent = 'Flip LED'; bt.title = 'Flip the LED in place (anode / cathode swap, wires stay as they are)';
@@ -184,9 +184,9 @@
           const key = 'low|' + low.n + '|' + low.key + '|' + low.v.toFixed(1);
           if (sh.dataset.rvk !== key) {
             if (sh.dataset.rv == null) sh.dataset.rv = sh.textContent;
-            sh.dataset.rvk = key; sh.textContent = '⚠ ' + low.n + ' (' + low.key + ' LED) needs about ' + low.vf + ' V forward voltage but gets only ' + low.v.toFixed(1) + ' V: raise the supply voltage';
+            sh.dataset.rvk = key; sh.style.color = ''; sh.style.fontWeight = ''; sh.textContent = '⚠ ' + low.n + ' (' + low.key + ' LED) needs about ' + low.vf + ' V forward voltage but gets only ' + low.v.toFixed(1) + ' V: raise the supply voltage';
           }
-        } else if (sh.dataset.rv != null) { sh.textContent = sh.dataset.rv; delete sh.dataset.rv; delete sh.dataset.rvk; }
+        } else if (sh.dataset.rv != null) { sh.textContent = sh.dataset.rv; sh.style.color = ''; sh.style.fontWeight = ''; delete sh.dataset.rv; delete sh.dataset.rvk; }
       }
     } catch (e) { /* hint only */ }
     document.querySelectorAll('#scene [data-fx]').forEach((el) => {
