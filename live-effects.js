@@ -200,12 +200,16 @@
     document.querySelectorAll('#scene [data-fx]').forEach((el) => {
       const v = vals.get(el.dataset.fx); if (!v) return;
       const o = (n) => el.setAttribute('opacity', n.toFixed(3));
+      /* A flipped (mirrored) fan is DRAWN mirror-imaged, which would reverse the blades on screen a second time.
+         The polarity is already handled by the netlist (v sign), so undo the mirror here: the screen direction then follows
+         the electrical polarity only (fan flipped alone = other way round, battery AND fan flipped = back to clockwise). */
+      const pm = (el.dataset.role === 'rotor' || el.dataset.role === 'wind') ? parts.find((q) => String(q.id) === el.dataset.fx) : null, mg = pm && pm.m ? -1 : 1;
       switch (el.dataset.role) {
         case 'halo': case 'lit': case 'fil': case 'ledhalo': case 'ledlit': case 'ledrays': o(v.l); break;
         case 'ledcore': o(v.l * 0.85); break;
-        case 'rotor': el.setAttribute('transform', 'rotate(' + v.a.toFixed(1) + ')'); break;
+        case 'rotor': el.setAttribute('transform', 'rotate(' + (mg * v.a).toFixed(1) + ')'); break;
         case 'blur': o(Math.abs(v.s) * 0.35); break;
-        case 'wind': o(Math.min(1, Math.abs(v.s) * 1.4)); el.setAttribute('transform', 'rotate(' + v.w.toFixed(1) + ')'); break;
+        case 'wind': o(Math.min(1, Math.abs(v.s) * 1.4)); el.setAttribute('transform', 'rotate(' + (mg * v.w).toFixed(1) + ')'); break;
         case 'txt': if (el.textContent !== v.t) el.textContent = v.t; break;
         case 'pwr': el.setAttribute('fill', v.t ? '#46ff7a' : '#1b3a25'); break;
       }
