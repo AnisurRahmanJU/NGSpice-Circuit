@@ -179,7 +179,7 @@
               bt.onclick = () => flipLed(srcN);
               sh.appendChild(bt);
             } else sh.appendChild(document.createTextNode('Rotate / mirror the source (+ toward the resistor) or the LED.'));
-          }
+          } 
         } else if (low) {
           const key = 'low|' + low.n + '|' + low.key + '|' + low.v.toFixed(1);
           if (sh.dataset.rvk !== key) {
