@@ -171,15 +171,15 @@
           const key = bad + '|' + srcN;
           if (sh.dataset.rvk !== key) {
             if (sh.dataset.rv == null) sh.dataset.rv = sh.textContent;
-            sh.dataset.rvk = key; sh.textContent = '⚠ ' + bad + ' is reverse-biased, so it cannot glow. ';
+            sh.dataset.rvk = key; sh.textContent = '⚠ LED is reverse-biased, so it cannot glow. ';
             if (srcN) {
               const bt = document.createElement('button');
-              bt.textContent = 'Flip ' + srcN; bt.title = 'Flip ' + srcN + ' in place (anode / cathode swap, wires stay as they are)';
+              bt.textContent = 'Flip LED'; bt.title = 'Flip the LED in place (anode / cathode swap, wires stay as they are)';
               bt.style.cssText = 'margin-left:6px;padding:2px 10px;border-radius:6px;border:1px solid #f0a000;background:#fff3d6;color:#7a4b00;font-weight:600;cursor:pointer';
               bt.onclick = () => flipLed(srcN);
               sh.appendChild(bt);
             } else sh.appendChild(document.createTextNode('Rotate / mirror the source (+ toward the resistor) or the LED.'));
-          } 
+          }
         } else if (low) {
           const key = 'low|' + low.n + '|' + low.key + '|' + low.v.toFixed(1);
           if (sh.dataset.rvk !== key) {
