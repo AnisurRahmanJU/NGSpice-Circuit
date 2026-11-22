@@ -893,21 +893,22 @@ function normPts(pts){const o=[];pts.forEach(q=>{if(!o.length||o[o.length-1][0]!
   for(let i=o.length-2;i>0;i--){const a=o[i-1],b=o[i],c=o[i+1];if((a[0]===b[0]&&b[0]===c[0])||(a[1]===b[1]&&b[1]===c[1]))o.splice(i,1)}return o.length>1?o:null}
 function addPart(k,gx,gy,v){mutate(()=>{const D=SYMS[k];let val=v!=null?v:D.def;
     const pre=D.pre||'';let n=k==='GND'?'':k==='LBL'?'':newName(pre);if(k==='LBL'){let i=1;while(S.M.parts.some(p=>p.t==='LBL'&&p.v==='net'+i))i++;val='net'+i}
-    const p={id:uid(S.M),t:k,n,v:val==null?'':val,x:gx,y:gy,r:S.gr,m:S.gm};S.M.parts.push(p);ensureModel(S.M,p);S.sel=new Set([p.id]);S.selW=null})}
+    const p={id:uid(S.M),t:k,n,v:val==null?'':val,x:gx,y:gy,r:S.gr,m:S.gm};S.M.parts.push(p);ensureModel(S.M,p);S.sel=new Set([p.id]);S.selW=null});needRun()}
 function delSel(){if(S.selW){mutate(()=>{S.M.wires=S.M.wires.filter(w=>w!==S.selW);S.selW=null;S.selNet=null});return}
   if(!S.sel.size)return;mutate(()=>{S.M.parts=S.M.parts.filter(p=>!S.sel.has(p.id));S.sel.clear()})}
-function dupSel(){if(!S.sel.size)return;mutate(()=>{const ns=new Set();[...S.sel].forEach(id=>{const p=S.M.parts.find(q=>q.id===id);if(!p)return;const c=JSON.parse(JSON.stringify(p));c.id=uid(S.M);c.x+=3;c.y+=3;if(SYMS[c.t].pre)c.n=newName(SYMS[c.t].pre);S.M.parts.push(c);ns.add(c.id)});S.sel=ns})}
+function dupSel(){if(!S.sel.size)return;mutate(()=>{const ns=new Set();[...S.sel].forEach(id=>{const p=S.M.parts.find(q=>q.id===id);if(!p)return;const c=JSON.parse(JSON.stringify(p));c.id=uid(S.M);c.x+=3;c.y+=3;if(SYMS[c.t].pre)c.n=newName(SYMS[c.t].pre);S.M.parts.push(c);ns.add(c.id)});S.sel=ns});needRun()}
 function attach(ids){const pk=new Map();S.M.parts.filter(p=>ids.has(p.id)).forEach(p=>partPins(p).forEach(q=>pk.set(K(q.x,q.y),{p,name:q.name,ox:q.ox,oy:q.oy})));
   const att=[];S.M.wires.forEach(w=>{const a=w.pts[0],b=w.pts[w.pts.length-1],ka=pk.get(K(a[0],a[1])),kb=pk.get(K(b[0],b[1]));if(ka||kb)att.push({w,o:w.pts.map(q=>q.slice()),a:ka,b:kb})});return att}
 
  function transformSel(fn){
-  if(!S.sel.size)return;
+  if(!S.sel.size)return false;
 
   mutate(()=>{
     S.M.parts
       .filter(p=>S.sel.has(p.id))
       .forEach(fn);
   });
+  return true;
 }
   /*function transformSel(fn){if(!S.sel.size)return;mutate(()=>{const att=attach(S.sel);S.M.parts.filter(p=>S.sel.has(p.id)).forEach(fn);
   const pos=(t)=>{const pp=partPins(t.p).find(q=>q.name===t.name);return pp};
@@ -917,8 +918,8 @@ function attach(ids){const pk=new Map();S.M.parts.filter(p=>ids.has(p.id)).forEa
     else{const nb=[B.x,B.y];t.w.pts=[o[0],...lr(o[0],nb,B.ox===0)]}
     t.w.pts=normPts(t.w.pts)||t.w.pts});S.M.wires=S.M.wires.filter(w=>w.pts.length>1)})}*/
 
-const rotSel=()=>{if(S.tool==='place'){S.gr=(S.gr+1)%4;drawOver();return}transformSel(p=>{if(p.t!=='GND'||true)p.r=(p.r+1)%4})};
-const mirSel=()=>{if(S.tool==='place'){S.gm^=1;drawOver();return}transformSel(p=>{p.m=p.m?0:1})};
+const rotSel=()=>{if(S.tool==='place'){S.gr=(S.gr+1)%4;drawOver();return}if(transformSel(p=>{if(p.t!=='GND'||true)p.r=(p.r+1)%4})!==false)needRun()};
+const mirSel=()=>{if(S.tool==='place'){S.gm^=1;drawOver();return}if(transformSel(p=>{p.m=p.m?0:1})!==false)needRun()};
 function startDrag(ids,g){const att=attach(ids);S.drag={ids,start:g,orig:S.M.parts.filter(p=>ids.has(p.id)).map(p=>[p.id,p.x,p.y]),att,moved:false,snap:JSON.stringify(S.M)}}
 function doDrag(gx,gy){const d=S.drag,dx=gx-d.start[0],dy=gy-d.start[1];if(!dx&&!dy&&!d.moved)return;d.moved=true;
   d.orig.forEach(([id,x,y])=>{const p=S.M.parts.find(q=>q.id===id);p.x=x+dx;p.y=y+dy});
@@ -1320,6 +1321,10 @@ function svgString(){const b=bounds();if(!b)return null;const p=3,x=(b.x0-p)*U,y
   return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${Y}" width="${W}" height="${Y}" font-family="${EXFONT}"><rect width="${W}" height="${Y}" fill="#fff"/>${o}</svg>`}
 function toast(msg,kind){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','alert');document.body.appendChild(t)}
   t.textContent=msg;t.classList.toggle('info',kind==='info');t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),kind==='info'?4500:3200)}
+/* After the circuit is changed by Rotate / Flip / adding a component (palette click, drag-drop, Duplicate), the old result no longer
+   matches the schematic: tell the user to press Run (simulation panel or the NGSpice code tab). Cleared by the next run (showTab rewrites #simst). */
+const RUN_MSG='Please Run Simulation or NGSpice Code';
+function needRun(){try{const st=document.getElementById('simst');if(st)st.innerHTML=`<span class="wn">⚠ ${RUN_MSG}</span>`;toast(RUN_MSG,'info')}catch(e){}}
 /* Download is allowed only after a successful run of the CURRENT netlist; the graph/legend/tables are read live, so ticking/unticking traces (checkboxes) or re-running is always reflected */
 function exReady(){const o=$('#out'),ok=RES&&RES.op&&!(RES.errs&&RES.errs.length)&&RUNSIG!==null&&RUNSIG===simSig($('#src').value)&&o&&o.innerHTML.trim();
   if(!ok)toast('Please Run Simulation First, then Download Image.');return !!ok}
