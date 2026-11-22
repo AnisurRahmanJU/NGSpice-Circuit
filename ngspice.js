@@ -694,7 +694,7 @@ function showTab(){
       if(j>0){const f=Math.pow(10,Math.log10(a.f[j-1])+(ref-3-s0.db[j-1])/(s0.db[j]-s0.db[j-1])*(Math.log10(a.f[j])-Math.log10(a.f[j-1])));h+=`<p class="hint">−3 dB below the low-frequency level of ${esc(s0.name)} at ≈ <b>${eng(f)}Hz</b></p>`}
       h+=plot({xs:a.f,xlog:lg,series:S2.map(s=>({name:s.name,ys:s.ph,c:s.c,u:'°'})),xl:'frequency (Hz)',yl:'phase (°)'},'ap')}}
   o.innerHTML=h;if(ANIM.on&&ANIM.idx!=null)paintAll(ANIM.idx);if(CUR.i!=null)paintCursor(CUR.i)}
-const CTL_MSG='Please use .control run plot/print using + Analysis Selection Option';
+const CTL_MSG='Please use plot/print using + Analysis in Editable NGSpice Tab';
 /* the simulation runs only when the NGSpice code has a .control block with a plot / print line */
 const hasCtl=t=>ctlLines(t).length>0;
 function runSimUI(){stopAnim(true);hideTip();
