@@ -873,8 +873,8 @@ function delSel(){if(S.selW){mutate(()=>{S.M.wires=S.M.wires.filter(w=>w!==S.sel
 function dupSel(){if(!S.sel.size)return;mutate(()=>{const ns=new Set();[...S.sel].forEach(id=>{const p=S.M.parts.find(q=>q.id===id);if(!p)return;const c=JSON.parse(JSON.stringify(p));c.id=uid(S.M);c.x+=3;c.y+=3;if(SYMS[c.t].pre)c.n=newName(SYMS[c.t].pre);S.M.parts.push(c);ns.add(c.id)});S.sel=ns})}
 function attach(ids){const pk=new Map();S.M.parts.filter(p=>ids.has(p.id)).forEach(p=>partPins(p).forEach(q=>pk.set(K(q.x,q.y),{p,name:q.name,ox:q.ox,oy:q.oy})));
   const att=[];S.M.wires.forEach(w=>{const a=w.pts[0],b=w.pts[w.pts.length-1],ka=pk.get(K(a[0],a[1])),kb=pk.get(K(b[0],b[1]));if(ka||kb)att.push({w,o:w.pts.map(q=>q.slice()),a:ka,b:kb})});return att}
-/*function transformSel(fn){if(!S.sel.size)return;mutate(()=>{const att=attach(S.sel);S.M.parts.filter(p=>S.sel.has(p.id)).forEach(fn);*/
-function transformSel(fn){
+
+ function transformSel(fn){
   if(!S.sel.size)return;
 
   mutate(()=>{
@@ -883,12 +883,14 @@ function transformSel(fn){
       .forEach(fn);
   });
 }
+  /*function transformSel(fn){if(!S.sel.size)return;mutate(()=>{const att=attach(S.sel);S.M.parts.filter(p=>S.sel.has(p.id)).forEach(fn);
   const pos=(t)=>{const pp=partPins(t.p).find(q=>q.name===t.name);return pp};
   att.forEach(t=>{const A=t.a&&pos(t.a),B=t.b&&pos(t.b),o=t.o,n=o.length;
     if(A&&B){const na=[A.x,A.y],nb=[B.x,B.y];t.w.pts=[na,...lr(na,nb,A.ox!==0)]}
     else if(A){const na=[A.x,A.y];t.w.pts=[na,...lr(na,o[n-1],A.ox!==0)]}
     else{const nb=[B.x,B.y];t.w.pts=[o[0],...lr(o[0],nb,B.ox===0)]}
-    t.w.pts=normPts(t.w.pts)||t.w.pts});S.M.wires=S.M.wires.filter(w=>w.pts.length>1)})}
+    t.w.pts=normPts(t.w.pts)||t.w.pts});S.M.wires=S.M.wires.filter(w=>w.pts.length>1)})}*/
+
 const rotSel=()=>{if(S.tool==='place'){S.gr=(S.gr+1)%4;drawOver();return}transformSel(p=>{if(p.t!=='GND'||true)p.r=(p.r+1)%4})};
 const mirSel=()=>{if(S.tool==='place'){S.gm^=1;drawOver();return}transformSel(p=>{p.m=p.m?0:1})};
 function startDrag(ids,g){const att=attach(ids);S.drag={ids,start:g,orig:S.M.parts.filter(p=>ids.has(p.id)).map(p=>[p.id,p.x,p.y]),att,moved:false,snap:JSON.stringify(S.M)}}
