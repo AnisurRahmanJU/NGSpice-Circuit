@@ -372,7 +372,7 @@ Object.assign(SYMS,{
 BULB:{pre:'RBULB',fmt:'two',pins:two,bb:[-3,-3,3,3],ib:[-34,-30,34,30],def:'24',name:'Bulb',cat:'Passive',
  draw:p=>`<path d="M-30 0H-14M14 0H30" ${STY}/><circle${hk(p,'halo')} r="40" fill="url(#rc-halo-bulb)" opacity="${fxs(p).l}" pointer-events="none"/><circle r="14" ${FIL}stroke="var(--sym)" stroke-width="2"/><circle${hk(p,'lit')} r="13" fill="#ffd54a" opacity="${fxs(p).l}"/><path d="M-10-10L10 10M10-10L-10 10" ${STY}/>`},
 FAN:{pre:'RFAN',fmt:'two',pins:two4,bb:[-4,-3,4,3],ib:[-44,-30,44,30],def:'120',name:'Fan',cat:'Passive',
- draw:p=>`<path d="M-40 0H-16M16 0H40" ${STY}/><circle r="16" ${FIL}stroke="var(--sym)" stroke-width="2"/><g${hk(p,'rotor')} transform="rotate(${fxs(p).a})"><path d="M0 0V-12M0 0L10.4 6M0 0L-10.4 6" ${STY}/></g>`},
+ draw:p=>`<path d="M-40 0H-16M16 0H40" ${STY}/><circle r="16" ${FIL}stroke="var(--sym)" stroke-width="2"/><g${hk(p,'rotor')} transform="rotate(${p&&p.m?-fxs(p).a:fxs(p).a})"><path d="M0 0V-12M0 0L10.4 6M0 0L-10.4 6" ${STY}/></g>`},
 AM:{pre:'VAM',fmt:'two',pins:two4,bb:[-4,-3,4,3],ib:[-44,-30,44,36],def:'DC 0',name:'Ammeter',cat:'Measurement',draw:p=>mtr(p,'A')},
 VM:{pre:'RVM',fmt:'two',pins:two4,bb:[-4,-3,4,3],ib:[-44,-30,44,36],def:'10meg',name:'Voltmeter',cat:'Measurement',draw:p=>mtr(p,'V')}})}
 /* ---- 555 timer IC + CMOS logic gate symbols ---- */
