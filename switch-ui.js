@@ -13,7 +13,7 @@
   const isSw = (p) => p && (p.t === 'SW' || p.t === 'SWM' || p.t === 'DPDT');
   const live = () => typeof SIMLIVE !== 'undefined' && SIMLIVE && RES && RES.op && RES.C && !(RES.errs && RES.errs.length);
   const masterOff = () => S.M.parts.some((p) => p.t === 'SWM' && !closed(p));
-  const MSG = '⏻ Power switch is OFF — simulation stopped. Turn the switch ON to run the simulation.';
+  const MSG = 'Power switch is OFF - Simulation stopped. Turn the switch ON to run the simulation.';
 
   /* ---------- solver switch states of the frame on screen ---------- */
   window.SWSTATE = {
