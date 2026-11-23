@@ -7,6 +7,7 @@
 <meta name="description" content="Browser-based NGSpice circuit simulator with 160 examples, including 10 relay circuits and 8 real-life transformer circuits, 5 buzzer circuits (step-down, step-up, isolation, rectifier supplies, regulated supply, microphone transformer).">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="styles.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 .auto {
   display: none !important;
@@ -90,10 +91,18 @@
   <button id="bRun" class="run">▶ Run</button>
   <button id="bSound" title="Buzzer and fan sound on / off" aria-label="Buzzer and fan sound on or off"><i class="fa-solid fa-volume-high" aria-hidden="true"></i><span class="snd"> Sound</span></button>
   <button id="bTheme" title="Switch between light ☀ and dark 🌙 mode" aria-label="Switch between light and dark mode"><i class="fa-solid fa-moon th-moon" aria-hidden="true"></i><i class="fa-solid fa-sun th-sun" aria-hidden="true"></i></button>
+  <div id="auth-area">
+    <button type="button" id="login-btn" title="Login with Google"><i class="fa-brands fa-google" aria-hidden="true"></i><span>Login</span></button>
+    <div id="user-chip">
+      <img id="user-avatar" src="" alt="">
+      <span id="user-name"></span>
+      <button type="button" id="logout-btn" title="Logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></button>
+    </div>
+  </div>
   <input type="file" id="fileIn" accept=".cir,.net,.sp,.txt,.spice" hidden>
 </header>
 <div class="work">
-  <aside class="palette">
+  <aside class="palette" id="compPanel">
     <input id="psearch" type="search" placeholder="Search components…" aria-label="Search components">
     <div id="plist"></div>
   </aside>
@@ -136,14 +145,27 @@
   </section>
   <div class="hsplit" id="rzSide" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize Properties / NGSpice · double-click to reset"></div>
   <aside class="side">
-    <div class="stabs"><button data-p="prop" class="on">Properties</button><button data-p="net" >Editable NGSpice</button></div>
-    <div id="pProp" class="spanel"></div>
+    <div class="stabs"><button data-p="prop" class="on">Properties</button><button data-p="net">Editable NGSpice</button></div>
+    <div id="pProp" class="spanel">
+      <div class="nbar" id="pbar"><span class="hint">Component Properties</span></div>
+      <div class="editor prop-editor"><div id="pbox" class="pbox-body"></div></div>
+    </div>
     <div id="pNet" class="spanel" hidden>
       <div class="nbar"><select id="addan" aria-label="Add analysis"><option value="">＋ Analysis</option><option value="title">.title (Circuit Title Name)</option><option value="op">.op (Operating Point Analysis)</option><option value="dc">.dc (DC Sweep Analysis)</option><option value="ac">.ac (AC Sweep Analysis)</option><option value="tran">.tran (Time Domain/Transient Analysis) </option><option value="ic">.ic (Initial Conditions)</option><option value="ctl">plot/print (Plot/Print Graph)</option><option value="subckt">.subckt (Sub Circuit)</option><option value="model">.model (Device Model)</option><option value="comment">* Comment (Auto / Manual Comment)</option></select><button id="bCopy">Copy</button><button id="bRunNet" class="run" title="Run simulation"> ▶ </button><span class="hint">Edit NGSpice Code and Run</span></div>
       <div class="editor"><pre id="gut" aria-hidden="true"></pre><div class="cwrap"><pre id="hl" aria-hidden="true"></pre><textarea id="src" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="NGspice netlist"></textarea></div></div>
       <div id="nerr"></div>
     </div>
   </aside>
+</div>
+
+<div id="login-modal-overlay">
+  <div id="login-modal">
+    <button type="button" id="login-modal-close" title="Close">&times;</button>
+    <div class="login-modal-icon"><i class="fa-brands fa-google" aria-hidden="true"></i></div>
+    <h3>Sign in required</h3>
+    <p id="login-modal-msg">Sign in with Google to edit component properties, place components, create new circuits, save/upload netlists, export SVG/PNG, and view or edit NGSpice code.</p>
+    <div id="g_id_signin_container"></div>
+  </div>
 </div>
 
 <footer class="site-footer">
@@ -196,6 +218,25 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  var pProp = document.getElementById("pProp");
+  var pBar = document.getElementById("pbar");
+  var pBox = document.getElementById("pbox");
+  if (!pProp || !pBar || !pBox) return;
+
+  function syncPropContainer() {
+    Array.from(pProp.children).forEach(function (ch) {
+      if (ch !== pBar && !ch.classList.contains("prop-editor")) {
+        pBox.appendChild(ch);
+      }
+    });
+  }
+
+  new MutationObserver(syncPropContainer).observe(pProp, { childList: true });
+  syncPropContainer();
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
   var host = document.getElementById("pProp");
   if (!host) return;
   var MAP = [
@@ -212,7 +253,6 @@ document.addEventListener("DOMContentLoaded", function () {
       var t = (b.textContent || "").trim();
       for (var k = 0; k < MAP.length; k++) {
         if (MAP[k][0].test(t)) {
-          // drop any old leading symbol/emoji from the label
           for (var n = b.firstChild; n; n = n.nextSibling) {
             if (n.nodeType === 3 && n.nodeValue.trim()) {
               n.nodeValue = n.nodeValue.replace(/^[^A-Za-z]+/, "").replace(/^Mirror/i, "Flip");
@@ -352,6 +392,344 @@ document.addEventListener("DOMContentLoaded", function () {
     flowStoppedByUs = false;
   });
 });
+</script>
+
+<!-- ===== Google Login & Guest Restriction Logic ===== -->
+<script>
+(function () {
+  var GOOGLE_CLIENT_ID = "67521400455-0bt9eptaruohutmhnmlo4mpbm4lj6dqt.apps.googleusercontent.com";
+  var STORAGE_KEY = "ngspice_cvp_user";
+  var pendingAction = null;
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
+    catch (e) { return null; }
+  }
+  function setUser(u) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+  }
+  function clearUser() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  function isLoggedIn() {
+    return !!getUser();
+  }
+
+  function parseJwt(token) {
+    try {
+      var b64Url = token.split(".")[1];
+      var b64 = b64Url.replace(/-/g, "+").replace(/_/g, "/");
+      var jsonPayload = decodeURIComponent(
+        atob(b64).split("").map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join("")
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) { return null; }
+  }
+
+  var srcArea = document.getElementById("src");
+  var addAn = document.getElementById("addan");
+  var pNet = document.getElementById("pNet");
+  var pList = document.getElementById("plist");
+  var pPropEl = document.getElementById("pProp");
+
+  function applyGuestRestrictions() {
+    var logged = isLoggedIn();
+    document.documentElement.classList.toggle("ng-guest", !logged);
+    document.documentElement.classList.toggle("ng-authed", logged);
+
+    if (srcArea) {
+      srcArea.readOnly = !logged;
+    }
+    if (addAn) {
+      addAn.disabled = !logged;
+    }
+    if (pPropEl) {
+      pPropEl.querySelectorAll("input, select, textarea").forEach(function (ctrl) {
+        ctrl.readOnly = !logged && (ctrl.tagName === "INPUT" || ctrl.tagName === "TEXTAREA");
+        ctrl.setAttribute("aria-readonly", !logged ? "true" : "false");
+      });
+    }
+  }
+
+  function updateAuthUI() {
+    var user = getUser();
+    var loginBtn = document.getElementById("login-btn");
+    var userChip = document.getElementById("user-chip");
+    if (user) {
+      if (loginBtn) loginBtn.style.display = "none";
+      if (userChip) userChip.style.display = "flex";
+      var av = document.getElementById("user-avatar");
+      var nm = document.getElementById("user-name");
+      if (av) av.src = user.picture || "";
+      if (nm) nm.textContent = user.name || user.email || "Signed in";
+    } else {
+      if (loginBtn) loginBtn.style.display = "inline-flex";
+      if (userChip) userChip.style.display = "none";
+    }
+    applyGuestRestrictions();
+  }
+
+  function openLoginModal(msg) {
+    var msgEl = document.getElementById("login-modal-msg");
+    var overlay = document.getElementById("login-modal-overlay");
+    if (msgEl && msg) msgEl.textContent = msg;
+    if (overlay) overlay.style.display = "flex";
+    try {
+      if (window.google && google.accounts && google.accounts.id) {
+        var container = document.getElementById("g_id_signin_container");
+        if (container) {
+          container.innerHTML = "";
+          google.accounts.id.renderButton(container, {
+            theme: "outline", size: "large", type: "standard", shape: "pill"
+          });
+          google.accounts.id.prompt();
+        }
+      }
+    } catch (e) {}
+  }
+
+  function closeLoginModal() {
+    var overlay = document.getElementById("login-modal-overlay");
+    if (overlay) overlay.style.display = "none";
+    pendingAction = null;
+  }
+
+  function replayPendingAction() {
+    if (!pendingAction) return;
+    var act = pendingAction;
+    pendingAction = null;
+
+    if (act.type === "click" && act.el) {
+      var ev = new MouseEvent("click", { bubbles: true, cancelable: true });
+      ev.__ngAuth = true;
+      act.el.dispatchEvent(ev);
+    } else if (act.type === "focus" && act.el) {
+      act.el.readOnly = false;
+      act.el.focus();
+    } else if (act.type === "file" && act.fileInput) {
+      var fev = new MouseEvent("click", { bubbles: true, cancelable: true });
+      fev.__ngAuth = true;
+      act.fileInput.dispatchEvent(fev);
+    } else if (act.type === "netTab") {
+      var netBtn = document.querySelector('.stabs button[data-p="net"]');
+      if (netBtn) netBtn.click();
+    } else if (act.type === "editCode" && srcArea) {
+      srcArea.readOnly = false;
+      srcArea.focus();
+    }
+  }
+
+  function handleCredentialResponse(response) {
+    var payload = parseJwt(response.credential);
+    if (!payload) return;
+    setUser({
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture
+    });
+    updateAuthUI();
+    var overlay = document.getElementById("login-modal-overlay");
+    if (overlay) overlay.style.display = "none";
+    replayPendingAction();
+  }
+  window.handleCredentialResponse = handleCredentialResponse;
+
+  function initGoogle(retries) {
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+      return true;
+    }
+    if (retries > 0) {
+      setTimeout(function () { initGoogle(retries - 1); }, 150);
+    }
+    return false;
+  }
+
+  function gateClick(el, msg) {
+    if (!el) return;
+    el.addEventListener("click", function (e) {
+      if (e.__ngAuth || isLoggedIn()) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      pendingAction = { type: "click", el: el };
+      openLoginModal(msg);
+    }, true);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    updateAuthUI();
+    initGoogle(40);
+
+    // Keep guest restrictions enforced if UI re-renders
+    new MutationObserver(function () {
+      if (!isLoggedIn()) applyGuestRestrictions();
+    }).observe(document.body, { childList: true, subtree: true });
+
+    var loginBtn = document.getElementById("login-btn");
+    var logoutBtn = document.getElementById("logout-btn");
+    var closeBtn = document.getElementById("login-modal-close");
+    var overlay = document.getElementById("login-modal-overlay");
+
+    if (loginBtn) {
+      loginBtn.addEventListener("click", function () {
+        openLoginModal("Sign in with Google to unlock all NGSpice features.");
+      });
+    }
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", function () {
+        if (!confirm("Do you want to logout?")) return;
+        clearUser();
+        updateAuthUI();
+        if (window.google && google.accounts && google.accounts.id) {
+          google.accounts.id.disableAutoSelect();
+        }
+      });
+    }
+    if (closeBtn) closeBtn.addEventListener("click", closeLoginModal);
+    if (overlay) {
+      overlay.addEventListener("click", function (e) {
+        if (e.target === this) closeLoginModal();
+      });
+    }
+
+    // Everyone sees components & can search; clicking or dragging a component requires login
+    if (pList) {
+      pList.addEventListener("click", function (e) {
+        if (isLoggedIn()) return;
+        var item = e.target.closest(".pi");
+        if (!item) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = { type: "click", el: item };
+        openLoginModal("Sign in with Google to place components on the canvas.");
+      }, true);
+
+      pList.addEventListener("mousedown", function (e) {
+        if (isLoggedIn()) return;
+        var item = e.target.closest(".pi");
+        if (!item) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = { type: "click", el: item };
+        openLoginModal("Sign in with Google to place or drag components.");
+      }, true);
+
+      pList.addEventListener("dragstart", function (e) {
+        if (isLoggedIn()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        openLoginModal("Sign in with Google to drag components onto the canvas.");
+      }, true);
+    }
+
+    // Gate: New, Save, SVG export, and PNG export require login
+    gateClick(document.getElementById("bNew"), "Sign in with Google to create a new circuit.");
+    gateClick(document.getElementById("bCir"), "Sign in with Google to save NGSpice code (.cir).");
+    gateClick(document.getElementById("bSvg"), "Sign in with Google to export SVG.");
+    gateClick(document.getElementById("bPng"), "Sign in with Google to export PNG.");
+
+    // Gate: Open / upload netlist requires login
+    var bOpen = document.getElementById("bOpen");
+    var fileIn = document.getElementById("fileIn");
+    if (bOpen) {
+      bOpen.addEventListener("click", function (e) {
+        if (e.__ngAuth || isLoggedIn()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = { type: "file", fileInput: fileIn };
+        openLoginModal("Sign in with Google to upload a netlist file.");
+      }, true);
+    }
+    if (fileIn) {
+      fileIn.addEventListener("change", function (e) {
+        if (!isLoggedIn()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          this.value = "";
+          openLoginModal("Sign in with Google to upload a netlist file.");
+        }
+      }, true);
+    }
+
+    // Gate: Client cannot see or edit NGSpice code before login
+    var netTabBtn = document.querySelector('.stabs button[data-p="net"]');
+    if (netTabBtn) {
+      netTabBtn.addEventListener("click", function (e) {
+        if (isLoggedIn()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = { type: "netTab" };
+        openLoginModal("Sign in with Google to view and edit NGSpice code.");
+      }, true);
+    }
+
+    if (pNet) {
+      pNet.addEventListener("mousedown", function (e) {
+        if (isLoggedIn()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = { type: "netTab" };
+        openLoginModal("Sign in with Google to view and edit NGSpice code.");
+      }, true);
+    }
+
+    if (srcArea) {
+      srcArea.addEventListener("mousedown", function (e) {
+        if (isLoggedIn()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = { type: "editCode" };
+        openLoginModal("Sign in with Google to view and edit NGSpice code.");
+      }, true);
+      srcArea.addEventListener("keydown", function (e) {
+        if (!isLoggedIn()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          openLoginModal("Sign in with Google to edit NGSpice code.");
+        }
+      }, true);
+    }
+
+    // Gate: Property editing requires login (viewing properties remains allowed)
+    if (pPropEl) {
+      function blockPropEdit(e) {
+        if (isLoggedIn()) return;
+        var target = e.target.closest("input, select, textarea, button");
+        if (!target) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = {
+          type: (target.tagName === "INPUT" || target.tagName === "TEXTAREA") ? "focus" : "click",
+          el: target
+        };
+        openLoginModal("Sign in with Google to edit component properties.");
+      }
+      pPropEl.addEventListener("mousedown", blockPropEdit, true);
+      pPropEl.addEventListener("change", blockPropEdit, true);
+      pPropEl.addEventListener("input", blockPropEdit, true);
+      pPropEl.addEventListener("keydown", function (e) {
+        if (isLoggedIn()) return;
+        var target = e.target.closest("input, select, textarea, button");
+        if (!target) return;
+        if (e.key === "Tab" || e.key === "Escape") return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingAction = {
+          type: (target.tagName === "INPUT" || target.tagName === "TEXTAREA") ? "focus" : "click",
+          el: target
+        };
+        openLoginModal("Sign in with Google to edit component properties.");
+      }, true);
+    }
+  });
+})();
 </script>
 </body>
 </html>
