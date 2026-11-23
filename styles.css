@@ -18,7 +18,7 @@ button.stop{background:linear-gradient(#f0605d,#d64545);border-color:#d64545;col
 button.stop:disabled,button.run:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 .work{flex:1 0 680px;min-height:680px;display:grid;grid-template-columns:var(--palW,236px) 10px minmax(0,1fr) 10px var(--sideW,340px);gap:0;padding:10px}
 .palette,.side,.canvas-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);min-height:0}
-.palette{display:flex;flex-direction:column;padding:10px;overflow:hidden}
+.palette{position:relative;display:flex;flex-direction:column;padding:10px;overflow:hidden}
 .palette input[type=search]{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--code);margin-bottom:8px}
 #plist{flex:1;overflow:auto;margin:0 -4px;padding:0 4px} .pg{margin-bottom:6px} .pg>h4{margin:8px 2px 5px;font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut)}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -425,6 +425,71 @@ html.realistic #tip .th{color:#e6d374}
 html.realistic #tip .r i{border-radius:50%}
 #zbox{position:fixed;z-index:55;display:none;pointer-events:none;border:1.5px dashed var(--accent);background:rgba(31,143,224,.14)}
 html.realistic #zbox{border-color:#e6d374;background:rgba(230,211,116,.12)}
+
+/* =====================================================================
+   PROPERTIES PANEL MATCHING EDITABLE NGSPICE TAB
+   ===================================================================== */
+#pProp:not([hidden]){
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+}
+#pbar{
+  flex:none;
+}
+.editor.prop-editor{
+  display:block;
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:10px 12px 24px;
+}
+.pbox-body{
+  min-height:100%;
+}
+#pProp .field input,
+#pProp .field select{
+  background:var(--panel);
+}
+#pProp .code{
+  background:var(--panel);
+}
+#pProp .ph svg{
+  background:var(--panel);
+}
+html.ng-guest #pProp .field input[readonly],
+html.ng-guest #pProp .field select{
+  cursor:pointer;
+}
+
+/* ---------- Auth Controls & Guest Restrictions ---------- */
+#auth-area{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.top #login-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;border:1px solid #2d6ca2;background:linear-gradient(180deg,#2589d8,#186cb0);color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 2px 6px rgba(24,108,176,.3)}
+.top #login-btn:hover{background:linear-gradient(180deg,#3097e8,#1e7bc4);border-color:#4cb4ff}
+.top #login-btn i{color:#fff}
+#user-chip{display:none;align-items:center;gap:6px;padding:2px 8px 2px 3px;border-radius:999px;background:#17324d;border:1px solid #2d527a;color:var(--topink)}
+#user-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #4cc3ff;background:#0f2740;flex-shrink:0}
+#user-name{font-size:12px;font-weight:600;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top #logout-btn{padding:3px 7px;border-radius:999px;background:#1f4166;border-color:#2d527a;color:#ffd6d6;font-size:12px}
+.top #logout-btn:hover{background:#753734;border-color:#d64545;color:#fff}
+
+html.ng-guest .editor .cwrap{position:relative;overflow:hidden}
+html.ng-guest .editor .cwrap::after{content:"🔒 Login with Google to view or edit NGSpice code";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;font:600 12.5px/1.45 Inter,system-ui,sans-serif;color:var(--ink);background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(4px);cursor:pointer;z-index:3}
+html.ng-guest #src{cursor:not-allowed;user-select:none}
+html.ng-guest #bNew,
+html.ng-guest #bOpen,
+html.ng-guest #bCir,
+html.ng-guest #bSvg,
+html.ng-guest #bPng{opacity:.65}
+
+#login-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(8,18,28,.62);align-items:center;justify-content:center;padding:14px}
+#login-modal{position:relative;width:350px;max-width:92vw;padding:28px 24px 24px;border-radius:14px;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:0 16px 48px rgba(0,0,0,.45);text-align:center}
+#login-modal-close{position:absolute;top:10px;right:12px;border:0;background:transparent;color:var(--mut);font-size:20px;line-height:1;padding:4px 8px}
+#login-modal-close:hover{color:var(--ink)}
+.login-modal-icon{font-size:32px;color:var(--accent);margin-bottom:8px}
+#login-modal h3{margin:4px 0 8px;font-size:17px;font-weight:700}
+#login-modal p{margin:0 0 18px;font-size:12.5px;line-height:1.5;color:var(--mut)}
+#g_id_signin_container{display:flex;justify-content:center;min-height:44px}
 
 /* ---------- Footer ---------- */
 .site-footer{flex:none;width:100%;margin-top:4px;background:var(--top);color:var(--topink);border-top:3px solid var(--accent);padding:18px 18px calc(12px + env(safe-area-inset-bottom,0px))}
