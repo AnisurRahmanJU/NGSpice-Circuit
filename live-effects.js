@@ -7,6 +7,8 @@
   const KIND = { BULB: 'b', FAN: 'f', LED: 'l', AM: 'a', VM: 'v' }, vals = new Map();
   /* LED forward voltage by colour (V) at about 10 mA. Colour = word in the LED model name (RED_LED, BLUE_LED ...). */
   const VF = window.LED_VF = { red: 1.8, orange: 2.0, yellow: 2.1, amber: 2.1, green: 2.2, blue: 3.2, white: 3.2 };
+  /* glow colour of the schematic LED by colour word (same palette as the realistic LED) */
+  const LED_GLOW = { red: '#ff3b30', green: '#34c759', blue: '#2f7bff', yellow: '#ffd60a', orange: '#ff9500', white: '#f2f4f7', amber: '#ffb000' };
   const ledKey = (s) => { s = String(s || '').toLowerCase(); return Object.keys(VF).find((k) => s.indexOf(k) >= 0) || null; };
   /* voltage / current / threshold of one LED in solver vector x; vf = table value when the model really has that
      knee (so the glow follows the colour), otherwise the model's own knee (so a mismatched model never goes dark) */
@@ -204,6 +206,15 @@
          The polarity is already handled by the netlist (v sign), so undo the mirror here: the screen direction then follows
          the electrical polarity only (fan flipped alone = other way round, battery AND fan flipped = back to clockwise). */
       const pm = (el.dataset.role === 'rotor' || el.dataset.role === 'wind') ? parts.find((q) => String(q.id) === el.dataset.fx) : null, mg = pm && pm.m ? -1 : 1;
+      /* Schematic LED: its glow is drawn yellow, so recolour it here to the LED's own colour (RED_LED -> red, BLUE_LED -> blue ...).
+         The realistic LED already draws its own colour; its triangle path is different, so it is left alone. */
+      if (el.dataset.role === 'ledhalo' || (el.dataset.role === 'ledlit' && el.getAttribute('d') === 'M-8-12V12L8 0Z')) {
+        const lp = parts.find((q) => String(q.id) === el.dataset.fx), lk = (lp && ledKey(lp.v)) || 'yellow';
+        if (el.dataset.fxk !== lk) {
+          el.dataset.fxk = lk;
+          el.setAttribute('fill', el.dataset.role === 'ledhalo' ? 'url(#rc-halo-' + lk + ')' : (LED_GLOW[lk] || LED_GLOW.yellow));
+        }
+      }
       switch (el.dataset.role) {
         case 'halo': case 'lit': case 'fil': case 'ledhalo': case 'ledlit': case 'ledrays': o(v.l); break;
         case 'ledcore': o(v.l * 0.85); break;
