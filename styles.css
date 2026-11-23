@@ -279,7 +279,7 @@ html.realistic .dock.live #out::before{
   z-index:4;
 }
 
-/* Oscilloscope mode: keep output curves & numbers visible; hide gridlines, boxes, and gray/white axis lines */
+/* Oscilloscope mode: keep crisp output curves & numbers visible; hide gridlines, boxes, and gray/white axis lines */
 html.realistic #out .plot{
   position:relative;
   margin:0 !important;
@@ -331,7 +331,7 @@ html.realistic #out svg[data-geom] .trace,
 html.realistic #out svg[data-geom] [data-trace]{
   opacity:1 !important;
   visibility:visible !important;
-  filter:drop-shadow(0 0 2px rgba(207,234,226,.25));
+  filter:none !important;
 }
 
 html.realistic #out table{
