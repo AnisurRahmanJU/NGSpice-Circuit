@@ -1553,6 +1553,8 @@ TOPICS.forEach(t=>t.items.forEach(it=>{const ls=ctlInsert(String(it.net).replace
 /* every example with a capacitor carries .ic (+ uic on .tran); an inductor that needs it carries IC=0 */
 /* every example gets a power switch (RSWM1) in series with its main supply: OFF = simulation stopped, ON = simulation runs */
 if(window.SWX)TOPICS.forEach(t=>t.items.forEach(it=>{it._orig=it.net;it.net=SWX.addMaster(it.net)}));
+/* every example starts with its power switch OFF (RSWM... = 1G): the user turns it ON to run the simulation */
+TOPICS.forEach(t=>t.items.forEach(it=>{it.net=String(it.net).split('\n').map(l=>/^\s*RSWM\w*\s/i.test(l)?l.replace(/(\S+)(\s*)$/,(m,v,sp)=>/^1m$/i.test(v)?'1G'+sp:m):l).join('\n')}));
 TOPICS.forEach(t=>t.items.forEach(it=>{it.net=autoIC(it.net)}));
 TOPICS.forEach((t,i)=>topic.add(new Option(`${i+1}. ${t.topic} (${t.items.length})`,i)));
 function fillEx(){exsel.innerHTML=TOPICS[topic.value].items.map(it=>`<option value="${it.n}">${it.n}. ${esc(it.title)}</option>`).join('')}
