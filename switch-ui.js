@@ -16,7 +16,7 @@
   const CRs = () => (window.CR ? window.CR() : ((typeof RES !== 'undefined' && RES && RES.op && RES.C && !(RES.errs && RES.errs.length)) ? RES : null));
   const live = () => !!CRs();                                   /* circuit alive: power switch ON + runnable netlist */
   const masterOff = () => S.M.parts.some((p) => p.t === 'SWM' && !closed(p));
-  const MSG = 'Switch is OFF, turn the switch ON to run the simulation.';
+  const MSG = 'The switch of this circuit is OFF, please turn it ON.';
   const outputOn = () => (typeof SIMLIVE !== 'undefined' && SIMLIVE) || (typeof ANIM !== 'undefined' && ANIM.on);
 
   /* ---------- solver switch states of the frame on screen ---------- */
