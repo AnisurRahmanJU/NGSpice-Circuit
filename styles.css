@@ -84,15 +84,7 @@ th{color:var(--mut);font-weight:600}
 .chips{display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:6px}
 .tr{font:12px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;gap:4px;cursor:pointer}
 .tr i{width:10px;height:10px;border-radius:2px;display:inline-block}
-.rd{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--mut);display:flex;gap:12px;flex-wrap:nowrap;min-height:18px;
-  /* values under the graph: one row, scrolls sideways when it does not fit */
-  max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;
-  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x}
-.rd>*{flex:none;white-space:nowrap}
-.rd::-webkit-scrollbar{height:6px}
-.rd::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
-html.realistic .rd{scrollbar-color:#2e7368 transparent}
-html.realistic .rd::-webkit-scrollbar-thumb{background:#2e7368}
+.rd{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--mut);display:flex;gap:12px;flex-wrap:wrap;min-height:18px}
 .simctl{display:flex;align-items:center;gap:8px;margin-left:4px;padding-left:12px;border-left:1px solid var(--line)}
 .simctl button{padding:4px 12px;font-size:12.5px;white-space:nowrap}
 .simctl label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);white-space:nowrap}
@@ -131,9 +123,7 @@ html.realistic .dock::after{
   pointer-events:none;
   z-index:6;
 }
-/* top row: same ⊗ glyph at both ends (left + right), so the right screw is identical in size to the others
-   and sits on .dock itself, outside the horizontally scrolling .dockbar */
-html.realistic .dock::before{top:3px;content:"⊗ ⊗";right:4px;text-align:justify;text-align-last:justify}
+html.realistic .dock::before{top:3px}
 html.realistic .dock::after{bottom:2px}
 
 html.realistic .dockbar{
@@ -141,6 +131,17 @@ html.realistic .dockbar{
   gap:10px;
   padding:5px 14px;
   border-bottom:0;
+}
+html.realistic .dockbar::after{
+  content:"⊗";
+  position:absolute;
+  right:4px;
+  top:3px;
+  font-size:10px;
+  line-height:1;
+  color:#596158;
+  opacity:.78;
+  pointer-events:none;
 }
 html.realistic .dockbar b{
   font-size:13.5px;
@@ -746,3 +747,174 @@ html.realistic .center.big #out::-webkit-scrollbar-track{background:#133935}
 #out>.chips .tr{flex:0 0 auto;white-space:nowrap}
 #out>.chips::-webkit-scrollbar{height:6px}
 #out>.chips::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+/* ---- Fix: top-right screw (⊗) must stay fixed, not scroll with the Run / Stop bar ----
+   It was positioned inside the scrolling .dockbar. With the bar no longer the positioning parent,
+   the screw is placed against the fixed .dock frame instead. */
+html.realistic .dockbar{position:static}
+html.realistic .dock{position:relative}
+html.realistic .dockbar::after{position:absolute;right:4px;top:3px;z-index:7}
+
+/* ---- Thick, touch-friendly scrollbars (chips row, Run bar, output box) ---- */
+html.realistic .dockbar,
+html.realistic #out,
+html.realistic #out .chips,
+html.realistic .center.big #out,
+#out>.chips,
+.dockbar{scrollbar-width:auto}
+html.realistic .dockbar::-webkit-scrollbar,
+html.realistic #out::-webkit-scrollbar,
+html.realistic #out .chips::-webkit-scrollbar,
+html.realistic .center.big #out::-webkit-scrollbar,
+#out>.chips::-webkit-scrollbar,
+.dockbar::-webkit-scrollbar{width:14px;height:14px}
+html.realistic .dockbar::-webkit-scrollbar-thumb,
+html.realistic #out::-webkit-scrollbar-thumb,
+html.realistic #out .chips::-webkit-scrollbar-thumb,
+html.realistic .center.big #out::-webkit-scrollbar-thumb{
+  background:#2e8a7c;border-radius:8px;border:2px solid rgba(0,0,0,.18);min-width:48px;min-height:48px;
+}
+html.realistic .dockbar::-webkit-scrollbar-track{background:#a4aba2;border-radius:8px}
+html.realistic #out .chips::-webkit-scrollbar-track{background:#9aa29a;border-radius:8px}
+#out>.chips::-webkit-scrollbar-thumb,
+.dockbar::-webkit-scrollbar-thumb{background:#8a99ab;border-radius:8px;min-width:48px;min-height:48px}
+#out>.chips::-webkit-scrollbar-track,
+.dockbar::-webkit-scrollbar-track{background:var(--line);border-radius:8px}
+/* phones / tablets: even thicker so a finger can grab it */
+@media (pointer:coarse){
+  html.realistic .dockbar::-webkit-scrollbar,
+  html.realistic #out::-webkit-scrollbar,
+  html.realistic #out .chips::-webkit-scrollbar,
+  html.realistic .center.big #out::-webkit-scrollbar,
+  #out>.chips::-webkit-scrollbar,
+  .dockbar::-webkit-scrollbar{width:20px;height:20px}
+  html.realistic #out .chips{padding-bottom:8px}
+}
+
+/* ---- Slim, beautiful scrollbars (overrides the thick ones above) ----
+   The scrollbar itself is 12px (14px on touch) so a finger can still hit it, but the visible handle
+   is a slim rounded pill: a transparent border + background-clip makes the handle look ~6px thick.
+   The track is transparent, so the green grid box keeps its height and looks clean. */
+html.realistic .dockbar::-webkit-scrollbar,
+html.realistic #out::-webkit-scrollbar,
+html.realistic #out .chips::-webkit-scrollbar,
+html.realistic .center.big #out::-webkit-scrollbar,
+#out>.chips::-webkit-scrollbar,
+.dockbar::-webkit-scrollbar{width:12px;height:12px;background:transparent}
+html.realistic .dockbar::-webkit-scrollbar-track,
+html.realistic #out::-webkit-scrollbar-track,
+html.realistic #out .chips::-webkit-scrollbar-track,
+html.realistic .center.big #out::-webkit-scrollbar-track,
+#out>.chips::-webkit-scrollbar-track,
+.dockbar::-webkit-scrollbar-track,
+html.realistic #out::-webkit-scrollbar-corner,
+html.realistic .center.big #out::-webkit-scrollbar-corner{background:transparent;border-radius:0}
+html.realistic .dockbar::-webkit-scrollbar-thumb,
+html.realistic #out::-webkit-scrollbar-thumb,
+html.realistic #out .chips::-webkit-scrollbar-thumb,
+html.realistic .center.big #out::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#5fc2b1,#2f8f81);
+  background-clip:padding-box;
+  border:3px solid transparent;
+  border-radius:999px;
+  min-width:56px;min-height:56px;
+}
+html.realistic .dockbar::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#6f8f88,#456a63);background-clip:padding-box}
+html.realistic #out .chips::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4f6f69,#35564f);background-clip:padding-box}
+html.realistic .dockbar::-webkit-scrollbar-thumb:hover,
+html.realistic #out::-webkit-scrollbar-thumb:hover,
+html.realistic #out .chips::-webkit-scrollbar-thumb:hover{filter:brightness(1.15)}
+#out>.chips::-webkit-scrollbar-thumb,
+.dockbar::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#a9b6c6,#8190a4);
+  background-clip:padding-box;
+  border:3px solid transparent;
+  border-radius:999px;
+  min-width:56px;
+}
+/* Firefox: thin native bar with matching colours */
+html.realistic .dockbar,html.realistic #out,html.realistic #out .chips,html.realistic .center.big #out{scrollbar-width:thin;scrollbar-color:#3a9a8a transparent}
+#out>.chips,.dockbar{scrollbar-width:thin;scrollbar-color:#8190a4 transparent}
+/* touch screens: slightly bigger hit area, same slim look */
+@media (pointer:coarse){
+  html.realistic .dockbar::-webkit-scrollbar,
+  html.realistic #out::-webkit-scrollbar,
+  html.realistic #out .chips::-webkit-scrollbar,
+  html.realistic .center.big #out::-webkit-scrollbar,
+  #out>.chips::-webkit-scrollbar,
+  .dockbar::-webkit-scrollbar{width:14px;height:14px}
+  html.realistic #out .chips{padding-bottom:6px}
+}
+/* the scrollbar sits inside the box, so give the maximized grid box a little more height back */
+html.realistic .center.big #out{min-height:290px}
+
+/* ---- Fix: Run / Stop / all dock buttons vanished when the window was maximized ----
+   The tall fixed-size grid box squeezed the button bar to 0 height. Keep the bar at full height,
+   and let the grid box shrink (and scroll) instead. */
+.dockbar{flex:none;min-height:max-content}
+html.realistic .center.big #out{flex:0 1 auto;min-height:0}
+
+/* ---- Zero line (0) of the plot: clear horizontal separator between positive and negative wave ---- */
+#out svg .zl{stroke:var(--mut);stroke-width:.8;opacity:.9;pointer-events:none;vector-effect:non-scaling-stroke}
+html.realistic #out svg .zl{stroke:#e6f7ee;stroke-width:.8;opacity:.8;filter:none;vector-effect:non-scaling-stroke}
+
+/* ---- Maximized simulation window: no empty grey area under the green grid box ----
+   The window height now FOLLOWS its content (button bar + green box + a small frame),
+   instead of a fixed 58vh. Desktop and mobile use the same rule; very tall content is capped
+   at 80% of the screen height and then scrolls inside the box. */
+html.realistic .center.big{grid-template-rows:minmax(240px,1fr) 8px auto;align-items:stretch}
+html.realistic .center.big>*:not(.dock){align-self:stretch;min-height:0}
+html.realistic .center.big>.dock{align-self:end;height:auto;max-height:80vh}
+html.realistic .center.big #out{flex:0 1 auto;min-height:270px;margin:6px auto 0}
+@media(max-width:1100px){
+  html.realistic .center.big{grid-template-rows:560px 8px auto}
+  html.realistic .center.big>.dock{align-self:start;max-height:none}
+}
+
+/* ---- Desktop (wide screens): green grid box fills the whole window width, evenly framed ----
+   Mobile / tablet keep the compact fixed box above. Here the box spans edge-to-edge inside the
+   window frame, with a comfortable height, and the plot stays centred inside it. */
+@media(min-width:1101px){
+  html.realistic .center.big #out{
+    width:100%;
+    max-width:none;
+    aspect-ratio:auto;
+    height:clamp(300px,40vh,430px);
+    min-height:300px;
+    margin:8px 0 0;
+    align-self:stretch;
+  }
+  html.realistic .center.big #out>.plot{
+    width:100%;
+    max-width:880px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  html.realistic .center.big #out>.chips{padding-left:14px;padding-right:14px}
+}
+
+/* Fix: circuit canvas panel must stay visible when the simulation window is maximized */
+html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:240px}
+@media(max-width:1100px){html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:560px}}
+
+/* ---- Fix (tablet / narrow / zoomed screens, 1100px and below) ----
+   Maximizing made the stacked layout taller than the screen (560px canvas + big dock), so the page
+   scrolled down to the simulation window and the circuit canvas was pushed up out of sight.
+   Now the canvas row and the maximized dock share the screen height, so both stay visible. */
+@media(max-width:1100px){
+  html.realistic .center.big{grid-template-rows:minmax(300px,46vh) 8px auto}
+  html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:300px}
+  html.realistic .center.big #out{
+    aspect-ratio:auto;
+    height:clamp(270px,36vh,380px);
+    min-height:270px;
+  }
+}
+
+
+/* narrow layout, maximized: canvas + simulation window fit together on one screen (no scrolling needed to see both) */
+@media(max-width:1100px){
+  html.realistic .center.big{grid-template-rows:minmax(230px,34vh) 8px auto}
+  html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:230px}
+  html.realistic .center.big #out{height:clamp(250px,30vh,330px);min-height:250px}
+}
