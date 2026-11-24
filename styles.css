@@ -1,0 +1,923 @@
+:root{--bg:#eef2f7;--panel:#fff;--ink:#14263a;--mut:#62768b;--line:#d9e2ec;--accent:#1f8fe0;--accd:#1f8fe0;--err:#d64545;--ok:#1f9d63;--warn:#b7791f;--canvas:#fbfdff;--grid:#c3d0de;--grid2:#e6edf4;--code:#f4f8fc;--sym:#1f3248;--symf:#eaf3fb;--wire:#0d8a66;--top:#0f2740;--topink:#e8f1fa;--shadow:0 1px 2px rgba(15,39,64,.06),0 6px 20px rgba(15,39,64,.08);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light;--t-c:#6b8f7d;--t-d:#8d3fc4;--t-n:#0b7f62;--t-g:#0a5c47;--t-x:#c2570c;--t-k:#b5176e;--t-p:#8a6200;--t-q:#1f6fc9;--t-e1:#1f6fc9;--t-e2:#d0481f;--t-e3:#8d3fc4;--t-e4:#0e8a8a}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a121b;--panel:#122030;--ink:#e6eef6;--mut:#8ea6bd;--line:#223549;--accent:#4cb4ff;--accd:#4cb4ff;--err:#ff8a8a;--ok:#46d39a;--warn:#e0b25a;--canvas:#0e1b29;--grid:#2c4258;--grid2:#162636;--code:#0d1824;--sym:#d7e6f5;--symf:#173049;--wire:#3fe0a6;--top:#08121c;color-scheme:dark;--t-c:#7fa893;--t-d:#c792ea;--t-n:#4fd9ae;--t-g:#8ff0cf;--t-x:#ffa766;--t-k:#ff7eb6;--t-p:#e6c06b;--t-q:#6cb8ff;--t-e1:#6cb8ff;--t-e2:#ff8a65;--t-e3:#c792ea;--t-e4:#5fe0e0}}
+:root[data-theme="dark"]{--bg:#0a121b;--panel:#122030;--ink:#e6eef6;--mut:#8ea6bd;--line:#223549;--accent:#4cb4ff;--accd:#4cb4ff;--err:#ff8a8a;--ok:#46d39a;--warn:#e0b25a;--canvas:#0e1b29;--grid:#2c4258;--grid2:#162636;--code:#0d1824;--sym:#d7e6f5;--symf:#173049;--wire:#3fe0a6;--top:#08121c;color-scheme:dark;--t-c:#7fa893;--t-d:#c792ea;--t-n:#4fd9ae;--t-g:#8ff0cf;--t-x:#ffa766;--t-k:#ff7eb6;--t-p:#e6c06b;--t-q:#6cb8ff;--t-e1:#6cb8ff;--t-e2:#ff8a65;--t-e3:#c792ea;--t-e4:#5fe0e0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)} *{box-sizing:border-box} html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:13.5px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden;overflow-y:auto}
+button,select,input{font:inherit;color:var(--ink)} button,select{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 10px;cursor:pointer;transition:border-color .12s,background .12s}
+button:hover,select:hover{border-color:var(--accent)} button:active{transform:translateY(1px)}
+kbd{background:var(--code);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;font:11px ui-monospace,Menlo,monospace} .sp{flex:1} .hint{color:var(--mut);font-size:12px}
+.top{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--top);color:var(--topink);flex-wrap:wrap;min-width:0;width:100%} .brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand b{display:block;font-size:15px;letter-spacing:.2px;line-height:1.1} .brand span{display:block;font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:#7fc4f2}
+.ex{display:flex;align-items:center;gap:7px;margin-left:10px;min-width:0;flex:0 1 270px} .top label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#8fb2cf}
+.ex select{width:100%;min-width:0;max-width:270px;background:#17324d;border-color:#27466a;color:var(--topink);overflow:hidden;text-overflow:ellipsis}
+.top .grp{display:flex;border-radius:7px;overflow:hidden;border:1px solid #27466a;min-width:0} .top .grp button{border:0;border-radius:0;background:#17324d;color:var(--topink);border-right:1px solid #27466a}
+.top .grp button:last-child{border-right:0} .top .grp button:hover{background:#1f4166}
+.top .auto{display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--topink)} .top #bTheme{background:#17324d;border-color:#27466a;color:var(--topink)}
+button.run{background:linear-gradient(#2aa6f4,#1583d4);border-color:#1583d4;color:#fff;font-weight:600;padding:6px 14px;box-shadow:0 2px 8px rgba(31,143,224,.35)}
+button.stop{background:linear-gradient(#f0605d,#d64545);border-color:#d64545;color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(214,69,69,.30)}
+button.stop:disabled,button.run:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.work{flex:1 0 680px;min-height:680px;display:grid;grid-template-columns:var(--palW,236px) 10px minmax(0,1fr) 10px var(--sideW,340px);gap:0;padding:10px}
+.palette,.side,.canvas-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);min-height:0}
+.palette{position:relative;display:flex;flex-direction:column;padding:10px;overflow:hidden}
+.palette input[type=search]{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--code);margin-bottom:8px}
+#plist{flex:1;overflow:auto;margin:0 -4px;padding:0 4px} .pg{margin-bottom:6px} .pg>h4{margin:8px 2px 5px;font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pi{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 5px;border:1px solid var(--line);border-radius:9px;background:var(--panel);cursor:grab;color:var(--sym);user-select:none}
+.pi:hover{border-color:var(--accent);background:var(--code)} .pi.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
+.pi svg{max-width:100%;height:34px} .pi span{font-size:11px;color:var(--ink);text-align:center;line-height:1.15}
+.tip{font-size:11.5px;color:var(--mut);margin:8px 2px 0;border-top:1px solid var(--line);padding-top:8px}
+.center{display:grid;grid-template-rows:minmax(240px,1fr) 8px var(--dockH,clamp(120px,17vh,160px));min-height:0;min-width:0;transition:grid-template-rows .18s}
+.center.min{--dockH:44px} .center.min #out{display:none} .center.big{--dockH:clamp(320px,58vh,640px)}
+html.realistic .center.min{--dockH:46px}
+.canvas-wrap{position:relative;overflow:hidden;background:var(--canvas)}
+#svg{position:absolute;inset:0;width:100%;height:100%;outline:0;touch-action:none;cursor:default;user-select:none}
+#svg.place{cursor:copy} #svg.wire{cursor:crosshair} #svg.pan{cursor:grabbing} .part{cursor:move}
+.tools{position:absolute;z-index:3;top:10px;left:10px;display:flex;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:var(--shadow)}
+.tools button{border:0;background:transparent;width:32px;height:30px;padding:0;font-size:15px;border-radius:7px} .tools button:hover{background:var(--code)} .tools button.on{background:var(--accent);color:#fff} .tools i{width:1px;background:var(--line);margin:3px}
+.status{position:absolute;left:0;right:0;bottom:0;display:flex;gap:18px;padding:4px 12px;background:color-mix(in srgb,var(--panel) 88%,transparent);border-top:1px solid var(--line);font:11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--mut)}
+.vsplit{cursor:row-resize;position:relative} .vsplit::after{content:"";position:absolute;left:50%;top:2px;width:46px;height:4px;margin-left:-23px;border-radius:3px;background:var(--line)} .vsplit:hover::after{background:var(--accent)}
+
+/* =====================================================================
+   NORMAL SIMULATION WINDOW (SCHEMATIC MODE — DEFAULT)
+   ===================================================================== */
+.dock{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:var(--shadow);
+  color:var(--ink);
+}
+.dockbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:5px 12px;
+  border-bottom:1px solid var(--line);
+  flex-wrap:nowrap;
+  overflow-x:auto;
+}
+.dockbar>*{flex:none}
+.dockbar b{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  color:var(--mut);
+}
+#tabs{display:flex;gap:4px}
+#tabs button{padding:3px 11px;font-size:12.5px;border-radius:999px}
+#tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+#out{flex:1;overflow:auto;padding:8px 14px}
+#dockT,#dockB{padding:2px 9px;line-height:1.2}
+#simst{font-size:12.5px}
+#simst .ok,#nerr .ok{color:var(--ok)}
+#simst .er,#nerr .er{color:var(--err)}
+#simst .wn,#nerr .wn{color:var(--warn)}
+table{border-collapse:collapse;font:12.5px ui-monospace,Menlo,Consolas,monospace;margin:0 18px 8px 0}
+th,td{padding:3px 11px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600}
+.two{display:flex;flex-wrap:wrap;align-items:flex-start}
+.chips{display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:6px}
+.tr{font:12px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;gap:4px;cursor:pointer}
+.tr i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.rd{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--mut);display:flex;gap:12px;flex-wrap:nowrap;align-items:center;height:26px;min-height:26px;max-width:100%;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;white-space:nowrap;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin}
+.rd>span{flex:0 0 auto;white-space:nowrap}
+.rd::-webkit-scrollbar{height:4px}
+.rd::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
+.simctl{display:flex;align-items:center;gap:8px;margin-left:4px;padding-left:12px;border-left:1px solid var(--line)}
+.simctl button{padding:4px 12px;font-size:12.5px;white-space:nowrap}
+.simctl label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);white-space:nowrap}
+.simctl select{font-size:12px;padding:2px 4px}
+#aProg{width:90px;height:6px;border-radius:999px;background:var(--line);overflow:hidden;display:inline-block}
+#aBar{display:block;height:100%;width:0;background:var(--accent)}
+#aTime{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--mut);min-width:96px}
+.dock.live .dockbar b::after{content:" ●";color:var(--err);animation:simblink 1s infinite}
+@keyframes simblink{50%{opacity:.2}}
+.plot .ph{pointer-events:none}
+
+/* =====================================================================
+   OSCILLOSCOPE SIMULATION WINDOW (REALISTIC MODE: html.realistic)
+   ===================================================================== */
+html.realistic .dock{
+  position:relative;
+  border-radius:11px;
+  padding:0 9px 10px;
+  background:linear-gradient(180deg,#cfd4ce 0%,#bdc3bb 50%,#acb3aa 100%);
+  border:2px solid #777f76;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.52),
+    inset 0 -1px 0 rgba(0,0,0,.18),
+    0 5px 16px rgba(0,0,0,.22);
+  color:#2d3c40;
+}
+html.realistic .dock::before,
+html.realistic .dock::after{
+  content:"⊗";
+  position:absolute;
+  left:4px;
+  font-size:10px;
+  line-height:1;
+  color:#596158;
+  opacity:.78;
+  pointer-events:none;
+  z-index:6;
+}
+html.realistic .dock::before{top:3px}
+html.realistic .dock::after{bottom:2px}
+
+html.realistic .dockbar{
+  position:relative;
+  gap:10px;
+  padding:5px 14px;
+  border-bottom:0;
+}
+html.realistic .dockbar::after{
+  content:"⊗";
+  position:absolute;
+  right:4px;
+  top:3px;
+  font-size:10px;
+  line-height:1;
+  color:#596158;
+  opacity:.78;
+  pointer-events:none;
+}
+html.realistic .dockbar b{
+  font-size:13.5px;
+  font-weight:600;
+  text-transform:none;
+  letter-spacing:.2px;
+  color:#38494d;
+  text-shadow:0 1px 0 rgba(255,255,255,.45);
+}
+html.realistic .dock.live .dockbar b::after{
+  content:" ●";
+  color:#278a76;
+  animation:simblink 1.2s infinite;
+}
+@keyframes simblink{50%{opacity:.3}}
+
+html.realistic #dockT,
+html.realistic #dockB{
+  padding:3px 9px;
+  background:linear-gradient(180deg,#dce0da,#c0c6bd);
+  border:1px solid #7c847b;
+  border-radius:5px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 1px rgba(0,0,0,.14);
+}
+html.realistic #dockT:hover,
+html.realistic #dockB:hover{
+  background:linear-gradient(180deg,#e6eae4,#cad0c7);
+  border-color:#266b62;
+}
+html.realistic #dockT::before,
+html.realistic #dockB::before{color:#23635b !important}
+
+html.realistic .simctl{
+  gap:7px;
+  margin-left:2px;
+  padding-left:10px;
+  border-left:1px solid rgba(90,98,90,.28);
+}
+html.realistic .simctl button{padding:4px 12px;font-size:12px;border-radius:6px}
+html.realistic #bRunSim{
+  background:linear-gradient(180deg,#256e65,#19524b);
+  border:1px solid #123d38;
+  color:#d9f2ec;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 1px 2px rgba(0,0,0,.25);
+}
+html.realistic #bRunSim:hover:not(:disabled){
+  background:linear-gradient(180deg,#2c7e74,#1e6058);
+  border-color:#154741;
+}
+html.realistic #bStopSim{
+  background:linear-gradient(180deg,#964b47,#753734);
+  border:1px solid #592725;
+  color:#f7e6e5;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.22);
+}
+html.realistic .simctl label{color:#38494d}
+html.realistic .simctl select{background:#d8ddd6;border-color:#878f86;color:#2a393d}
+html.realistic #aProg{background:#9ba299}
+html.realistic #aBar{background:#256e65}
+html.realistic #aTime{color:#38494d}
+
+html.realistic #tabs button{
+  padding:3px 10px;
+  font-size:11.5px;
+  font-weight:600;
+  border-radius:5px;
+  background:linear-gradient(180deg,#dce0da,#c0c6bd);
+  border:1px solid #7f877e;
+  color:#2d3c40;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45);
+}
+html.realistic #tabs button:hover{
+  background:linear-gradient(180deg,#e6eae4,#cad0c7);
+  border-color:#256e65;
+}
+html.realistic #tabs button.on{
+  background:linear-gradient(180deg,#256e65,#19524b);
+  color:#d9f2ec;
+  border-color:#123d38;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28);
+}
+
+html.realistic #simst{font-size:12px;font-weight:600;color:#2d3c40}
+html.realistic #simst .ok,html.realistic #nerr .ok{color:#1b6e4e}
+html.realistic #simst .er,html.realistic #nerr .er{color:#a83838}
+html.realistic #simst .wn,html.realistic #nerr .wn{color:#8c6219}
+
+html.realistic #out{
+  position:relative;
+  flex:1;
+  overflow:auto;
+  padding:0;
+  border-radius:8px;
+  border:2px solid #273837;
+  background-color:#194b45;
+  background-image:
+    linear-gradient(to right, rgba(164,218,205,.24) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(164,218,205,.24) 1px, transparent 1px),
+    linear-gradient(to right, rgba(154,212,199,.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(154,212,199,.08) 1px, transparent 1px),
+    radial-gradient(circle at 52% 45%, #235c54 0%, #194b45 68%, #133935 100%);
+  background-size:
+    100px 100px,
+    100px 100px,
+    10px 10px,
+    10px 10px,
+    100% 100%;
+  background-position:
+    0 0,
+    0 0,
+    0 0,
+    0 0,
+    center center;
+  background-attachment:local;
+  box-shadow:
+    inset 0 0 24px rgba(0,0,0,.52),
+    inset 0 1px 4px rgba(0,0,0,.38),
+    0 1px 0 rgba(255,255,255,.32);
+  color:#e6f7f2;
+  scrollbar-color:#2e7368 #133935;
+}
+html.realistic .dock.live #out::before{
+  content:"";
+  position:sticky;
+  top:0;
+  left:50%;
+  display:block;
+  width:52px;
+  height:4px;
+  margin:0 auto -4px;
+  border-radius:999px;
+  background:linear-gradient(180deg,#dfc256,#b59626);
+  box-shadow:0 1px 2px rgba(0,0,0,.35);
+  pointer-events:none;
+  z-index:4;
+}
+
+/* Oscilloscope mode: keep crisp output curves & numbers visible; hide gridlines, boxes, and gray/white axis lines */
+html.realistic #out .plot{
+  position:relative;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+html.realistic #out svg[data-geom]{
+  display:block;
+  margin:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+html.realistic #out svg[data-geom] rect,
+html.realistic #out svg[data-geom] line,
+html.realistic #out svg[data-geom] path:not([fill="none"]),
+html.realistic #out svg[data-geom] [stroke="#fff"],
+html.realistic #out svg[data-geom] [stroke="#ffffff"],
+html.realistic #out svg[data-geom] [stroke="white"],
+html.realistic #out svg[data-geom] [stroke="#e6eef6"],
+html.realistic #out svg[data-geom] [stroke="#f8fafc"],
+html.realistic #out svg[data-geom] [stroke="#e2e8f0"],
+html.realistic #out svg[data-geom] [stroke="#cbd5e1"],
+html.realistic #out svg[data-geom] [stroke="#94a3b8"],
+html.realistic #out svg[data-geom] [stroke="#64748b"],
+html.realistic #out svg[data-geom] [stroke="#8ea6bd"],
+html.realistic #out svg[data-geom] [stroke="#62768b"],
+html.realistic #out svg[data-geom] [stroke="#c3d0de"],
+html.realistic #out svg[data-geom] [stroke="#2c4258"]{
+  stroke:transparent !important;
+  fill:transparent !important;
+}
+html.realistic #out svg[data-geom] text{
+  fill:#e6f7f2 !important;
+  font-family:ui-monospace,Menlo,Consolas,monospace !important;
+  font-size:11px;
+  font-weight:700;
+  paint-order:stroke fill;
+  stroke:rgba(15,49,45,.88);
+  stroke-width:3px;
+}
+html.realistic #out svg[data-geom] polyline:not([stroke="transparent"]),
+html.realistic #out svg[data-geom] path[fill="none"]:not([stroke="transparent"]),
+html.realistic #out svg[data-geom] .trace,
+html.realistic #out svg[data-geom] [data-trace]{
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+}
+
+html.realistic #out table{
+  margin:10px 18px 8px 14px;
+  background:rgba(15,49,45,.66);
+  border:1px solid rgba(156,208,197,.22);
+  border-radius:6px;
+}
+html.realistic #out th,
+html.realistic #out td{
+  padding:4px 12px;
+  border-bottom:1px solid rgba(156,208,197,.14);
+  color:#d7efe8;
+}
+html.realistic #out th{
+  color:#e8d574;
+  font-weight:700;
+  background:rgba(22,68,62,.78);
+}
+/* Trace checkboxes -> coloured toggle buttons, one single horizontally-scrolling row
+   pinned directly under the Run / Stop line, above (never over) the green grid plot */
+html.realistic #out .chips{
+  position:sticky;
+  top:0;
+  left:0;
+  z-index:6;
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:7px;
+  margin:0;
+  padding:6px 12px;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  white-space:nowrap;
+  background:linear-gradient(180deg,#c3c9c1,#b3bab1);
+  border-bottom:2px solid #273837;
+  box-shadow:0 2px 4px rgba(0,0,0,.28);
+  scrollbar-width:thin;
+  scrollbar-color:#256e65 #a4aba2;
+  -webkit-overflow-scrolling:touch;
+}
+html.realistic #out .chips::-webkit-scrollbar{height:7px}
+html.realistic #out .chips::-webkit-scrollbar-thumb{background:#256e65;border-radius:4px}
+html.realistic #out .chips::-webkit-scrollbar-track{background:#a4aba2}
+html.realistic .tr{
+  --tb:#256e65;--tb2:#19524b;--tbd:#123d38;--tf:#e6f7f2;
+  position:relative;
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 12px;
+  font-size:11.5px;
+  font-weight:700;
+  line-height:1.2;
+  white-space:nowrap;
+  border-radius:6px;
+  background:linear-gradient(180deg,var(--tb),var(--tb2));
+  border:1px solid var(--tbd);
+  color:var(--tf);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 1px 2px rgba(0,0,0,.28);
+  user-select:none;
+  transition:transform .12s,box-shadow .12s,filter .12s;
+}
+html.realistic .tr:hover{transform:translateY(-1px);filter:brightness(1.1)}
+html.realistic .tr input[type=checkbox]{
+  position:absolute;opacity:0;width:0;height:0;margin:0;pointer-events:none;
+}
+html.realistic .tr i{
+  width:10px;height:10px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.85);
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+/* unchecked = raised, faded button; checked = pressed, bright button with a tick */
+html.realistic .tr:not(:has(input:checked)){filter:saturate(.35) brightness(.88);opacity:.82}
+html.realistic .tr:has(input:checked){box-shadow:inset 0 2px 3px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.35)}
+html.realistic .tr:has(input:checked)::after{content:"\2713";font-size:11px;margin-left:2px}
+html.realistic .tr:has(input:focus-visible){outline:2px solid #e8d574;outline-offset:1px}
+/* a different button colour for each checkbox */
+html.realistic .chips .tr:nth-child(8n+1){--tb:#d9bf4c;--tb2:#b39a22;--tbd:#7a6711;--tf:#241f05}
+html.realistic .chips .tr:nth-child(8n+2){--tb:#3c9ccf;--tb2:#25709c;--tbd:#164b69;--tf:#eef8ff}
+html.realistic .chips .tr:nth-child(8n+3){--tb:#d9605a;--tb2:#a93f3a;--tbd:#732724;--tf:#fff1f0}
+html.realistic .chips .tr:nth-child(8n+4){--tb:#7bbf5a;--tb2:#52913a;--tbd:#335e22;--tf:#0f2208}
+html.realistic .chips .tr:nth-child(8n+5){--tb:#a874d6;--tb2:#7c4aa8;--tbd:#512e74;--tf:#f8f0ff}
+html.realistic .chips .tr:nth-child(8n+6){--tb:#e3913f;--tb2:#b86a1c;--tbd:#7d4410;--tf:#2a1604}
+html.realistic .chips .tr:nth-child(8n+7){--tb:#3bb5a4;--tb2:#278a7c;--tbd:#175a51;--tf:#02221d}
+html.realistic .chips .tr:nth-child(8n){--tb:#d86fa3;--tb2:#a94a7c;--tbd:#71294f;--tf:#fff0f7}
+html.realistic .rd{font-weight:600;color:#b4dfd4;gap:14px;margin:0 14px}
+
+/* =====================================================================
+   SIDEBAR, EDITOR & DIALOGS
+   ===================================================================== */
+.side{display:flex;flex-direction:column;overflow:hidden}
+.stabs{display:flex;border-bottom:1px solid var(--line)} .stabs button{flex:1;border:0;border-radius:0;background:transparent;padding:10px 8px;font-weight:600;color:var(--mut);border-bottom:2px solid transparent}
+.stabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.spanel{flex:1;min-height:0;overflow:auto;padding:12px} .spanel[hidden],#pNet[hidden]{display:none}
+#pNet{display:flex;flex-direction:column;padding:10px}
+.field{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;font-size:12px;color:var(--mut)}
+.field input,.field select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--code);color:var(--ink);font:13px ui-monospace,Menlo,Consolas,monospace}
+.field input:focus,.field select:focus,.palette input:focus{outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);border-color:var(--accent)}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0} .row button{flex:1}
+.ph{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ph svg{background:var(--code);border:1px solid var(--line);border-radius:9px;padding:6px;color:var(--sym);width:64px;height:auto}
+.ph b{font-size:16px} .ph small{display:block;color:var(--mut)}
+.empty{color:var(--mut);text-align:center;margin-top:22px;font-size:12.5px} .empty h3{color:var(--ink);margin:6px 0}
+.code{display:block;background:var(--code);border:1px dashed var(--line);border-radius:7px;padding:6px 8px;font:12px ui-monospace,Menlo,monospace;word-break:break-all;margin-bottom:10px}
+.nbar{display:flex;gap:6px;align-items:center;margin-bottom:8px} .nbar .hint{margin-left:auto}
+#nerr{font-size:12px;margin-top:8px;max-height:110px;overflow:auto}
+.editor{flex:1;min-height:0;display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--code)}
+#gut{margin:0;padding:10px 6px 64px;text-align:right;min-width:34px;color:var(--mut);font:12.5px/20px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-synthesis:none;font-variant-ligatures:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;background:color-mix(in srgb,var(--line) 40%,transparent);overflow:hidden;user-select:none}
+.cwrap{position:relative;flex:1;min-width:0}
+#hl,#src{position:absolute;inset:0;margin:0;padding:10px 24px 24px 10px;border:0;font:12.5px/20px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:0;white-space:pre;tab-size:4;-moz-tab-size:4;word-spacing:0;font-weight:400;font-style:normal;font-synthesis:none;font-variant-ligatures:none;font-kerning:none;text-rendering:optimizeSpeed;-webkit-text-size-adjust:100%;text-size-adjust:100%;text-indent:0;text-transform:none;overflow-wrap:normal;word-break:normal;border-radius:0;-webkit-appearance:none;appearance:none}
+#hl{padding-bottom:64px;padding-right:64px}
+#hl{overflow:hidden;pointer-events:none;color:var(--ink)}
+#src{resize:none;outline:0;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:var(--ink);overflow:auto}
+#src::selection{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+#hl .c{color:var(--t-c)} #hl .d{color:var(--t-d)} #hl .n{color:var(--t-n)} #hl .g{color:var(--t-g)}
+#hl .x{color:var(--t-x)} #hl .k{color:var(--t-k)} #hl .p{color:var(--t-p)} #hl .u,#hl .e5{color:var(--mut)} #hl .q{color:var(--t-q)}
+#hl span{font:inherit;font-weight:400;font-style:normal;letter-spacing:0}
+#hl .e1{color:var(--t-e1)} #hl .e2{color:var(--t-e2)} #hl .e3{color:var(--t-e3)} #hl .e4{color:var(--t-e4)}
+#hl .ttl{color:var(--t-q);font-weight:600} #hl .lerr{background:color-mix(in srgb,var(--err) 14%,transparent);text-decoration:underline wavy var(--err);text-underline-offset:3px;display:inline;padding:0;margin:0;border:0}
+.zoomctl{display:flex;align-items:center;gap:6px;padding-left:12px;border-left:1px solid var(--line);font-size:12px;color:var(--mut)}
+.zoomctl button{padding:3px 9px;font-size:12.5px;line-height:1.2} .zoomctl button.on{background:var(--accent);color:#fff;border-color:var(--accent)} #zLbl{font:12px ui-monospace,Menlo,Consolas,monospace;min-width:34px}
+#out.zoomed svg[data-geom]{cursor:grab} #out.zoomed svg[data-geom]:active{cursor:grabbing} #out svg[data-geom]{touch-action:none}
+#tip{position:fixed;z-index:60;display:none;pointer-events:none;max-width:320px;padding:6px 10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);font:12px ui-monospace,Menlo,Consolas,monospace}
+#tip .th{font-weight:700;color:var(--mut);margin-bottom:3px} #tip .r{display:flex;align-items:center;gap:6px;white-space:nowrap} #tip .r i{width:9px;height:9px;border-radius:2px;flex:none} #tip .r b{margin-left:auto;padding-left:12px;font-weight:600}
+html.realistic #tip{background:#123b37;color:#d8efe8;border-color:#3c7d73}
+html.realistic #tip .th{color:#e6d374}
+html.realistic #tip .r i{border-radius:50%}
+#zbox{position:fixed;z-index:55;display:none;pointer-events:none;border:1.5px dashed var(--accent);background:rgba(31,143,224,.14)}
+html.realistic #zbox{border-color:#e6d374;background:rgba(230,211,116,.12)}
+
+/* =====================================================================
+   PROPERTIES PANEL MATCHING EDITABLE NGSPICE TAB
+   ===================================================================== */
+#pProp:not([hidden]){
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+}
+#pbar{
+  flex:none;
+}
+.editor.prop-editor{
+  display:block;
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:10px 12px 24px;
+}
+.pbox-body{
+  min-height:100%;
+}
+#pProp .field input,
+#pProp .field select{
+  background:var(--panel);
+}
+#pProp .code{
+  background:var(--panel);
+}
+#pProp .ph svg{
+  background:var(--panel);
+}
+html.ng-guest #pProp .field input[readonly],
+html.ng-guest #pProp .field select{
+  cursor:pointer;
+}
+
+/* ---------- Auth Controls & Guest Restrictions ---------- */
+#auth-area{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.top #login-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;border:1px solid #2d6ca2;background:linear-gradient(180deg,#2589d8,#186cb0);color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 2px 6px rgba(24,108,176,.3)}
+.top #login-btn:hover{background:linear-gradient(180deg,#3097e8,#1e7bc4);border-color:#4cb4ff}
+.top #login-btn i{color:#fff}
+#user-chip{display:none;align-items:center;gap:6px;padding:2px 8px 2px 3px;border-radius:999px;background:#17324d;border:1px solid #2d527a;color:var(--topink)}
+#user-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #4cc3ff;background:#0f2740;flex-shrink:0}
+#user-name{font-size:12px;font-weight:600;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top #logout-btn{padding:3px 7px;border-radius:999px;background:#1f4166;border-color:#2d527a;color:#ffd6d6;font-size:12px}
+.top #logout-btn:hover{background:#753734;border-color:#d64545;color:#fff}
+
+html.ng-guest .editor .cwrap{position:relative;overflow:hidden}
+html.ng-guest .editor .cwrap::after{content:"🔒 Login with Google to view or edit NGSpice code";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;font:600 12.5px/1.45 Inter,system-ui,sans-serif;color:var(--ink);background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(4px);cursor:pointer;z-index:3}
+html.ng-guest #src{cursor:not-allowed;user-select:none}
+html.ng-guest #bNew,
+html.ng-guest #bOpen,
+html.ng-guest #bCir,
+html.ng-guest #bSvg,
+html.ng-guest #bPng{opacity:.65}
+
+#login-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(8,18,28,.62);align-items:center;justify-content:center;padding:14px}
+#login-modal{position:relative;width:350px;max-width:92vw;padding:28px 24px 24px;border-radius:14px;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:0 16px 48px rgba(0,0,0,.45);text-align:center}
+#login-modal-close{position:absolute;top:10px;right:12px;border:0;background:transparent;color:var(--mut);font-size:20px;line-height:1;padding:4px 8px}
+#login-modal-close:hover{color:var(--ink)}
+.login-modal-icon{font-size:32px;color:var(--accent);margin-bottom:8px}
+#login-modal h3{margin:4px 0 8px;font-size:17px;font-weight:700}
+#login-modal p{margin:0 0 18px;font-size:12.5px;line-height:1.5;color:var(--mut)}
+#g_id_signin_container{display:flex;justify-content:center;min-height:44px}
+
+/* ---------- Footer ---------- */
+.site-footer{flex:none;width:100%;margin-top:4px;background:var(--top);color:var(--topink);border-top:3px solid var(--accent);padding:18px 18px calc(12px + env(safe-area-inset-bottom,0px))}
+.foot-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:18px 28px;flex-wrap:wrap}
+.foot-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.foot-brand b{display:block;font-size:14px;letter-spacing:.2px;line-height:1.2}
+.foot-brand small{display:block;font-size:12px;color:#8fb2cf}
+.foot-links{display:flex;flex-wrap:wrap;gap:10px}
+.foot-links a{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid #27466a;border-radius:999px;background:#17324d;color:var(--topink);text-decoration:none;font-size:12.5px;font-weight:600;transition:background .15s,border-color .15s,transform .15s,color .15s}
+.foot-links a:hover,.foot-links a:focus-visible{background:#1f4166;border-color:#4cb4ff;color:#fff;transform:translateY(-1px);outline:0}
+.foot-links a svg{flex:none;color:#4cc3ff}
+.foot-copy{max-width:1400px;margin:14px auto 0;padding-top:10px;border-top:1px solid #1f3a57;text-align:center;font-size:11.5px;color:#7f9bb5}
+
+@media(max-width:1100px){
+body{overflow:auto} .work{grid-template-columns:minmax(0,1fr);overflow:auto;grid-auto-rows:auto;flex:1 0 auto;min-height:0} .palette{height:var(--palH,260px);max-height:none}
+.center{grid-template-rows:560px 8px 170px} .center.min{grid-template-rows:560px 8px 44px} html.realistic .center.min{grid-template-rows:560px 8px 46px} .center.big{grid-template-rows:560px 8px 420px}
+.side{height:var(--sideH,420px);min-height:120px} .ex select{max-width:170px}
+.hsplit{cursor:row-resize;height:14px}.hsplit::after{width:46px!important;height:4px!important;left:50%!important;top:5px!important;margin:0 0 0 -23px!important}
+}
+@media(max-width:700px){
+.foot-inner{flex-direction:column;align-items:flex-start}
+.foot-links{width:100%}
+.foot-links a{flex:1 1 auto;justify-content:center}
+}
+@media(max-width:600px){
+.top{gap:7px;padding:8px} .brand{flex:1 1 100%;min-width:0} .top .sp{display:none} .ex{flex:1 1 100%;width:100%;max-width:100%;margin:0} .ex select{flex:1;width:0;min-width:0;max-width:none}
+.top .grp{flex:1 1 auto;min-width:0} .top .grp button{flex:1;min-width:0;padding:5px;font-size:12px} .top .auto{font-size:11px} button.run{padding:6px 10px;white-space:nowrap}
+}
+@media(max-width:380px){
+.top{gap:5px;padding:7px} .top .grp button{padding:5px 3px;font-size:11px} .top .auto{font-size:10px} button.run{padding:5px 8px}
+}
+
+/* ---- Schematic <-> Realistic swap (inside the Select · Wire · Rotate tool panel) ---- */
+.tools .viewsw{display:flex;align-items:center;gap:7px;padding:2px 6px 2px 4px;align-self:center}
+.tools .viewsw .vl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--mut);cursor:pointer;user-select:none;white-space:nowrap}
+.tools .viewsw .vl.on{color:var(--accent)}
+.tools .viewsw .rocker{position:relative;width:42px;min-width:42px;height:22px;padding:0;border-radius:999px;border:1px solid var(--line);background:var(--code);box-shadow:inset 0 1px 3px rgba(0,0,0,.25);cursor:pointer;display:block;flex:none}
+.tools .viewsw .rocker:hover{background:var(--code)}
+.tools .viewsw .rocker .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:linear-gradient(180deg,#8fd3ff,var(--accent));box-shadow:0 1px 3px rgba(0,0,0,.4);transition:left .18s cubic-bezier(.4,0,.2,1),background .18s}
+.tools .viewsw .rocker.on .knob{left:22px;background:linear-gradient(180deg,#ffe2b0,#e29a3b)}
+.tools .viewsw .rocker:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html.realistic .pi svg{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.28))}
+html.realistic #svg .part{filter:drop-shadow(0 1.2px 1.2px rgba(0,0,0,.28))}
+@media(max-width:700px){.tools .viewsw .vl{display:none}.tools .viewsw .vl.on{display:inline}}
+
+/* toast message */
+#toast{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translate(-50%,-20px);z-index:9999;max-width:calc(100% - 24px);padding:11px 18px;border-radius:10px;background:#d64545;color:#fff;font:600 14px/1.3 Inter,Segoe UI,Helvetica,Arial,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.info{background:#1f8fe0}
+
+/* ---------- drag-to-resize handles (mouse + touch) ---------- */
+.hsplit{position:relative;cursor:col-resize;touch-action:none;user-select:none;-webkit-user-select:none;outline:0;z-index:5}
+.hsplit::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:56px;margin-top:-28px;border-radius:3px;background:var(--line);transition:background .12s,height .12s}
+.hsplit:hover::after,.hsplit:focus-visible::after,.hsplit.drag::after{background:var(--accent)}
+.hsplit.drag::after{height:80px;margin-top:-40px}
+.hsplit::before{content:"";position:absolute;inset:0 -8px}
+body.rzing{cursor:col-resize!important;user-select:none;-webkit-user-select:none}
+body.rzing *{cursor:inherit!important}
+body.rzing iframe,body.rzing svg,body.rzing textarea{pointer-events:none}
+@media(max-width:1100px){body.rzing{cursor:row-resize!important}.hsplit::before{inset:-8px 0}}
+.vsplit{touch-action:none;user-select:none;-webkit-user-select:none}
+.vsplit::before{content:"";position:absolute;inset:-8px 0}
+.palette,.side{min-width:0}
+.pgrid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.stabs button{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nbar{flex-wrap:wrap}
+
+/* =====================================================================
+   Desktop / tablet: wide, flexible Topic + Example selectors
+   ===================================================================== */
+@media (min-width: 701px) {
+  .top .ex {
+    flex: 1 1 520px;
+    max-width: 860px;
+    min-width: 320px;
+    margin-left: 18px;
+    gap: 10px;
+    align-items: center;
+  }
+  .top > .sp { flex: 0 0 0; }
+  .top .ex label {
+    flex: none;
+    white-space: nowrap;
+    font-size: 11.5px;
+    letter-spacing: .9px;
+  }
+  .top .ex select {
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    height: 34px;
+    padding: 0 34px 0 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--topink);
+    background-color: #17324d;
+    border: 1px solid #2d527a;
+    border-radius: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 1px 2px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.05);
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%234cc3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: border-color .15s, background-color .15s, box-shadow .15s;
+  }
+  #topic,
+  #exsel { flex: 1 1 0; width: 0; }
+  .top .ex select:hover {
+    background-color: #1c3b5b;
+    border-color: #4cb4ff;
+  }
+  .top .ex select:focus,
+  .top .ex select:focus-visible {
+    outline: 0;
+    border-color: #4cb4ff;
+    box-shadow: 0 0 0 3px rgba(76,195,255,.28);
+  }
+  .top .ex select option {
+    background: #122030;
+    color: #e8f1fa;
+  }
+}
+
+@media (min-width: 1400px) {
+  .top .ex { flex-basis: 680px; max-width: 980px; }
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .top .ex { flex: 1 1 100%; max-width: none; margin-left: 0; order: 3; }
+}
+
+/* ---------- + Analysis dialogs (.model / .subckt / comment) ---------- */
+.dlg-back{position:fixed;inset:0;z-index:9000;background:rgba(8,18,28,.55);display:flex;align-items:center;justify-content:center;padding:12px}
+.dlg{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.4);width:min(560px,100%);max-height:92vh;display:flex;flex-direction:column}
+.dlg h3{margin:0;padding:12px 16px;border-bottom:1px solid var(--line);font-size:15px}
+.dlg-b{padding:12px 16px;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.dlg-b label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut)}
+.dlg-b label.ck,.dlg-b .rw{flex-direction:row;align-items:center;gap:8px;color:var(--ink)} .dlg-b .rw{gap:18px}
+.dlg-b input[type=text],.dlg-b select,.dlg-b textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--code);color:var(--ink);font:13px ui-monospace,Menlo,Consolas,monospace}
+.dlg-b pre{margin:0;max-height:210px;overflow:auto;padding:8px;background:var(--code);border:1px dashed var(--line);border-radius:7px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--mut)}
+.dlg-b [hidden]{display:none!important}
+.dlg-e{display:flex;gap:8px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)} .dlg-m{flex:1;color:var(--err);font-size:12px}
+.dlg-chips{font-size:12px;color:var(--mut)} .dlg-chips button{margin:2px 4px 2px 0;padding:2px 10px;font-size:12px;border-radius:999px}
+/* Realistic: let the plot start below the sticky chip row and keep the green grid box clean */
+/* Vertically centre the plot / result block inside the green box (chip row stays pinned at top).
+   Auto margins collapse to 0 when the content is taller than the box, so scrolling still works. */
+html.realistic #out{display:flex;flex-direction:column}
+html.realistic #out>*{flex:none}
+html.realistic #out>.chips{margin:0}
+html.realistic #out>.chips + *{margin-top:auto !important}
+html.realistic #out>*:last-child:not(.chips){margin-bottom:auto !important}
+html.realistic #out>.empty,
+html.realistic #out>.hint{margin-top:auto !important;margin-bottom:auto !important;align-self:center}
+html.realistic .dockbar{overflow-x:auto;scrollbar-width:thin}
+
+/* Maximized simulation window: fixed-size green grid box, a little larger than the plot (mobile + desktop).
+   Width: up to 780px, centred. Height: follows the width (aspect ratio) but never below 270px,
+   and never taller than the window. If the plot is bigger than the box (small phone / small window)
+   the box scrolls both ways: horizontally and vertically. */
+html.realistic .center.big #out{
+  flex:none;
+  align-self:center;
+  box-sizing:border-box;
+  width:min(100%,780px);
+  aspect-ratio:780/380;
+  min-height:270px;
+  max-height:100%;
+  margin:6px auto 0;
+  padding:0 0 10px;
+  overflow-x:auto;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:#2e7368 #133935;
+}
+/* keep the plot readable: below 600px wide it stops shrinking and the box scrolls sideways instead */
+html.realistic .center.big #out>.plot,
+html.realistic .center.big #out>svg[data-geom],
+html.realistic .center.big #out>table{min-width:600px}
+html.realistic .center.big #out>.plot svg[data-geom]{max-width:none}
+html.realistic .center.big #out::-webkit-scrollbar{width:8px;height:8px}
+html.realistic .center.big #out::-webkit-scrollbar-thumb{background:#2e7368;border-radius:4px}
+html.realistic .center.big #out::-webkit-scrollbar-track{background:#133935}
+
+/* Schematic (normal) mode: trace checkboxes also stay in ONE row and scroll horizontally */
+#out>.chips{
+  position:sticky;
+  top:0;
+  left:0;
+  z-index:5;
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:6px 12px;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  margin:0 0 6px;
+  padding:4px 2px 6px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  white-space:nowrap;
+  background:var(--panel);
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+#out>.chips .tr{flex:0 0 auto;white-space:nowrap}
+#out>.chips::-webkit-scrollbar{height:6px}
+#out>.chips::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+/* ---- Fix: top-right screw (⊗) must stay fixed, not scroll with the Run / Stop bar ----
+   It was positioned inside the scrolling .dockbar. With the bar no longer the positioning parent,
+   the screw is placed against the fixed .dock frame instead. */
+html.realistic .dockbar{position:static}
+html.realistic .dock{position:relative}
+html.realistic .dockbar::after{position:absolute;right:4px;top:3px;z-index:7}
+
+/* ---- Thick, touch-friendly scrollbars (chips row, Run bar, output box) ---- */
+html.realistic .dockbar,
+html.realistic #out,
+html.realistic #out .chips,
+html.realistic .center.big #out,
+#out>.chips,
+.dockbar{scrollbar-width:auto}
+html.realistic .dockbar::-webkit-scrollbar,
+html.realistic #out::-webkit-scrollbar,
+html.realistic #out .chips::-webkit-scrollbar,
+html.realistic .center.big #out::-webkit-scrollbar,
+#out>.chips::-webkit-scrollbar,
+.dockbar::-webkit-scrollbar{width:14px;height:14px}
+html.realistic .dockbar::-webkit-scrollbar-thumb,
+html.realistic #out::-webkit-scrollbar-thumb,
+html.realistic #out .chips::-webkit-scrollbar-thumb,
+html.realistic .center.big #out::-webkit-scrollbar-thumb{
+  background:#2e8a7c;border-radius:8px;border:2px solid rgba(0,0,0,.18);min-width:48px;min-height:48px;
+}
+html.realistic .dockbar::-webkit-scrollbar-track{background:#a4aba2;border-radius:8px}
+html.realistic #out .chips::-webkit-scrollbar-track{background:#9aa29a;border-radius:8px}
+#out>.chips::-webkit-scrollbar-thumb,
+.dockbar::-webkit-scrollbar-thumb{background:#8a99ab;border-radius:8px;min-width:48px;min-height:48px}
+#out>.chips::-webkit-scrollbar-track,
+.dockbar::-webkit-scrollbar-track{background:var(--line);border-radius:8px}
+/* phones / tablets: even thicker so a finger can grab it */
+@media (pointer:coarse){
+  html.realistic .dockbar::-webkit-scrollbar,
+  html.realistic #out::-webkit-scrollbar,
+  html.realistic #out .chips::-webkit-scrollbar,
+  html.realistic .center.big #out::-webkit-scrollbar,
+  #out>.chips::-webkit-scrollbar,
+  .dockbar::-webkit-scrollbar{width:20px;height:20px}
+  html.realistic #out .chips{padding-bottom:8px}
+}
+
+/* ---- Slim, beautiful scrollbars (overrides the thick ones above) ----
+   The scrollbar itself is 12px (14px on touch) so a finger can still hit it, but the visible handle
+   is a slim rounded pill: a transparent border + background-clip makes the handle look ~6px thick.
+   The track is transparent, so the green grid box keeps its height and looks clean. */
+html.realistic .dockbar::-webkit-scrollbar,
+html.realistic #out::-webkit-scrollbar,
+html.realistic #out .chips::-webkit-scrollbar,
+html.realistic .center.big #out::-webkit-scrollbar,
+#out>.chips::-webkit-scrollbar,
+.dockbar::-webkit-scrollbar{width:12px;height:12px;background:transparent}
+html.realistic .dockbar::-webkit-scrollbar-track,
+html.realistic #out::-webkit-scrollbar-track,
+html.realistic #out .chips::-webkit-scrollbar-track,
+html.realistic .center.big #out::-webkit-scrollbar-track,
+#out>.chips::-webkit-scrollbar-track,
+.dockbar::-webkit-scrollbar-track,
+html.realistic #out::-webkit-scrollbar-corner,
+html.realistic .center.big #out::-webkit-scrollbar-corner{background:transparent;border-radius:0}
+html.realistic .dockbar::-webkit-scrollbar-thumb,
+html.realistic #out::-webkit-scrollbar-thumb,
+html.realistic #out .chips::-webkit-scrollbar-thumb,
+html.realistic .center.big #out::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#5fc2b1,#2f8f81);
+  background-clip:padding-box;
+  border:3px solid transparent;
+  border-radius:999px;
+  min-width:56px;min-height:56px;
+}
+html.realistic .dockbar::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#6f8f88,#456a63);background-clip:padding-box}
+html.realistic #out .chips::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4f6f69,#35564f);background-clip:padding-box}
+html.realistic .dockbar::-webkit-scrollbar-thumb:hover,
+html.realistic #out::-webkit-scrollbar-thumb:hover,
+html.realistic #out .chips::-webkit-scrollbar-thumb:hover{filter:brightness(1.15)}
+#out>.chips::-webkit-scrollbar-thumb,
+.dockbar::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#a9b6c6,#8190a4);
+  background-clip:padding-box;
+  border:3px solid transparent;
+  border-radius:999px;
+  min-width:56px;
+}
+/* Firefox: thin native bar with matching colours */
+html.realistic .dockbar,html.realistic #out,html.realistic #out .chips,html.realistic .center.big #out{scrollbar-width:thin;scrollbar-color:#3a9a8a transparent}
+#out>.chips,.dockbar{scrollbar-width:thin;scrollbar-color:#8190a4 transparent}
+/* touch screens: slightly bigger hit area, same slim look */
+@media (pointer:coarse){
+  html.realistic .dockbar::-webkit-scrollbar,
+  html.realistic #out::-webkit-scrollbar,
+  html.realistic #out .chips::-webkit-scrollbar,
+  html.realistic .center.big #out::-webkit-scrollbar,
+  #out>.chips::-webkit-scrollbar,
+  .dockbar::-webkit-scrollbar{width:14px;height:14px}
+  html.realistic #out .chips{padding-bottom:6px}
+}
+/* the scrollbar sits inside the box, so give the maximized grid box a little more height back */
+html.realistic .center.big #out{min-height:290px}
+
+/* ---- Fix: Run / Stop / all dock buttons vanished when the window was maximized ----
+   The tall fixed-size grid box squeezed the button bar to 0 height. Keep the bar at full height,
+   and let the grid box shrink (and scroll) instead. */
+.dockbar{flex:none;min-height:max-content}
+html.realistic .center.big #out{flex:0 1 auto;min-height:0}
+
+/* ---- Zero line (0) of the plot: clear horizontal separator between positive and negative wave ---- */
+#out svg .zl{stroke:var(--mut);stroke-width:.8;opacity:.9;pointer-events:none;vector-effect:non-scaling-stroke}
+html.realistic #out svg .zl{stroke:#e6f7ee;stroke-width:.8;opacity:.8;filter:none;vector-effect:non-scaling-stroke}
+
+/* ---- Maximized simulation window: no empty grey area under the green grid box ----
+   The window height now FOLLOWS its content (button bar + green box + a small frame),
+   instead of a fixed 58vh. Desktop and mobile use the same rule; very tall content is capped
+   at 80% of the screen height and then scrolls inside the box. */
+html.realistic .center.big{grid-template-rows:minmax(240px,1fr) 8px auto;align-items:stretch}
+html.realistic .center.big>*:not(.dock){align-self:stretch;min-height:0}
+html.realistic .center.big>.dock{align-self:end;height:auto;max-height:80vh}
+html.realistic .center.big #out{flex:0 1 auto;min-height:270px;margin:6px auto 0}
+@media(max-width:1100px){
+  html.realistic .center.big{grid-template-rows:560px 8px auto}
+  html.realistic .center.big>.dock{align-self:start;max-height:none}
+}
+
+/* ---- Desktop (wide screens): green grid box fills the whole window width, evenly framed ----
+   Mobile / tablet keep the compact fixed box above. Here the box spans edge-to-edge inside the
+   window frame, with a comfortable height, and the plot stays centred inside it. */
+@media(min-width:1101px){
+  html.realistic .center.big #out{
+    width:100%;
+    max-width:none;
+    aspect-ratio:auto;
+    height:clamp(300px,40vh,430px);
+    min-height:300px;
+    margin:8px 0 0;
+    align-self:stretch;
+  }
+  html.realistic .center.big #out>.plot{
+    width:100%;
+    max-width:880px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  html.realistic .center.big #out>.chips{padding-left:14px;padding-right:14px}
+}
+
+/* Fix: circuit canvas panel must stay visible when the simulation window is maximized */
+html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:240px}
+@media(max-width:1100px){html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:560px}}
+
+/* ---- Fix (tablet / narrow / zoomed screens, 1100px and below) ----
+   Maximizing made the stacked layout taller than the screen (560px canvas + big dock), so the page
+   scrolled down to the simulation window and the circuit canvas was pushed up out of sight.
+   Now the canvas row and the maximized dock share the screen height, so both stay visible. */
+@media(max-width:1100px){
+  html.realistic .center.big{grid-template-rows:minmax(300px,46vh) 8px auto}
+  html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:300px}
+  html.realistic .center.big #out{
+    aspect-ratio:auto;
+    height:clamp(270px,36vh,380px);
+    min-height:270px;
+  }
+}
+
+
+/* narrow layout, maximized: canvas + simulation window fit together on one screen (no scrolling needed to see both) */
+@media(max-width:1100px){
+  html.realistic .center.big{grid-template-rows:minmax(230px,34vh) 8px auto}
+  html.realistic .center.big>*:not(.dock):not(.vsplit):not(.hsplit){min-height:230px}
+  html.realistic .center.big #out{height:clamp(250px,30vh,330px);min-height:250px}
+}
