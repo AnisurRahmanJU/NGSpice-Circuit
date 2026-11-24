@@ -778,6 +778,7 @@ function plot(o,id){
     x0=fx0+(fx1-fx0)*wx;x1=fx0+(fx1-fx0)*(wx+1/zx);lo=fl+(fh-fl)*wy;hi=fl+(fh-fl)*(wy+1/zy)}
   const X=v=>L+(fx(v)-x0)/(x1-x0)*pw,Y=v=>Tp+(1-(v-lo)/(hi-lo))*ph;let g='';
   ticks(lo,hi,5).forEach(v=>{g+=`<path d="M${L} ${Y(v)}H${W-Rr}" stroke="var(--grid)"/>`+T(L-6,Y(v)+4,eng(v),{a:'end',s:10.5,c:'var(--mut)'})});
+  if(lo<0&&hi>0)g+=`<path class="zl" d="M${L} ${Y(0)}H${W-Rr}" fill="none" stroke="var(--mut)" stroke-width="0.8" vector-effect="non-scaling-stroke"/>`; /* zero line: separates positive / negative wave */
   const xt=o.xlog?(()=>{const a=[];for(let e=Math.ceil(x0-1e-9);e<=x1+1e-9;e++)a.push(Math.pow(10,e));return a.length>=2?a:ticks(Math.pow(10,x0),Math.pow(10,x1),5)})():ticks(x0,x1,6);
   xt.forEach(v=>{g+=`<path d="M${X(v)} ${Tp}V${Tp+ph}" stroke="var(--grid)"/>`+T(X(v),H-B+14,eng(v),{s:10.5,c:'var(--mut)'})});
   g+=`<clipPath id="cp-${id}"><rect x="${L}" y="${Tp}" width="${pw}" height="${ph}"/></clipPath><g clip-path="url(#cp-${id})">`;
