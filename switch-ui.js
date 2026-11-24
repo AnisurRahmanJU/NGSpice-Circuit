@@ -120,7 +120,7 @@
       const P = $id('pProp'), head = P.querySelector('.ph'); let h = '';
       if (p.t === 'SW' || p.t === 'SWM') {
         const on = closed(p);
-        h = `<div class="field">Switch position</div><div class="row"><button id="swOn" style="${on ? 'background:#1a9d55;color:#fff' : ''}">● ON (closed)</button><button id="swOff" style="${on ? '' : 'background:#d64545;color:#fff'}">○ OFF (open)</button></div>
+        h = `<div class="field">Switch position</div><div class="row"><button id="swOn" style="${on ? 'background:#1a9d55;color:#fff' : ''}">● ON (closed)</button><button id="swOff" style="${on ? '' : 'background:#d64545;color:#fff'}">OFF (open)</button></div>
           <p class="hint">${p.t === 'SWM' ? 'Switches act on the circuit only (electron flow, lamps). The ON / OFF buttons of the simulation control the output.' : 'Click the switch on the canvas to toggle it.'}</p>`;
       } else if (p.t === 'DPDT') {
         const b = /_b\s*$/i.test(String(p.v));
