@@ -1,6 +1,5 @@
 /* live-effects.js — makes Bulb, LED, Fan and the Ammeter / Voltmeter come alive while a simulation runs.
-   Load AFTER ngspice.js.  Everything follows the CIRCUIT: dark / blank while the power switch is OFF or the netlist is not runnable, alive otherwise
-   (the Run / Stop buttons only control the simulation output and do not change it).
+   Load AFTER ngspice.js.  Everything is OFF (no light, no wind, blank meter) until Run is pressed, and OFF again after Stop or any edit.
    Bulb / Fan strength = voltage across the part relative to the largest source voltage in the circuit.
    LED brightness = LED current (about 10 mA = full).  Meters read the solver result of the frame that is on screen. */
 (function () {
@@ -22,22 +21,20 @@
   }
   window.FX = { get: (p) => { const v = vals.get(p.id); return v ? { l: v.l, a: v.a, s: Math.abs(v.s), sd: v.s, t: v.t, w: v.w } : { l: 0, a: 0, s: 0, sd: 0, t: '', w: 0 }; } };
   let last = 0, rvR = null, rv = 12, dvR = null, dv = null;
-  /* RS = solver result of the CIRCUIT (window.CR(), independent of Run / Stop). Refreshed at the start of every frame. */
-  let RS = null;
-  const live = () => !!(RS && RS.op && RS.C && !(RS.errs && RS.errs.length));
+  const live = () => typeof SIMLIVE !== 'undefined' && SIMLIVE && RES && RES.op && RES.C && !(RES.errs && RES.errs.length);
   /* A circuit driven only by plain DC sources (no SIN/PULSE/PWL/AC source) and with no C / L / 555 is in steady state:
      the Run animation loops .tran / .dc frames from the start (t = 0, or the swept source going 0 -> max), which made a
      DC-powered Bulb / LED / Fan / meter fade in and out. For such circuits we always use the steady DC operating point. */
   let sdR = null, sd = false;
   function steady() {
-    if (sdR !== RS) {
-      sdR = RS; sd = false;
+    if (sdR !== RES) {
+      sdR = RES; sd = false;
       try {
-        sd = !RS.C.devs.some((d) => {
+        sd = !RES.C.devs.some((d) => {
           if (d.t === 'C' || d.t === 'L') return true;
           if ((d.t === 'V' || d.t === 'I') && d.s && (d.s.w || d.s.acm)) return true;
           return false;
-        }) && !(RS.C.t555 && RS.C.t555.length);
+        }) && !(RES.C.t555 && RES.C.t555.length);
       } catch (e) { sd = false; }   /* any surprise -> old behaviour, never switch the lights off */
     }
     return sd;
@@ -47,9 +44,9 @@
      "reverse-biased / Flip" warning must never be shown for it (it used to flicker on and off with every half-cycle). */
   let acR = null, acV = false;
   function acDriven() {
-    if (acR !== RS) {
-      acR = RS; acV = false;
-      try { acV = RS.C.devs.some((d) => (d.t === 'V' || d.t === 'I') && d.s && (d.s.w || d.s.acm)); } catch (e) { acV = false; }
+    if (acR !== RES) {
+      acR = RES; acV = false;
+      try { acV = RES.C.devs.some((d) => (d.t === 'V' || d.t === 'I') && d.s && (d.s.w || d.s.acm)); } catch (e) { acV = false; }
     }
     return acV;
   }
@@ -58,18 +55,18 @@
      otherwise run a small hidden .tran (about 4 periods of the source) and loop it on our own 8 s clock. */
   let tvR = null, tvF = null;
   function frames() {
-    if (tvR !== RS) {
-      tvR = RS; tvF = null;
+    if (tvR !== RES) {
+      tvR = RES; tvF = null;
       try {
         let f = 0, tv = false;
-        RS.C.devs.forEach((d) => {
+        RES.C.devs.forEach((d) => {
           if ((d.t !== 'V' && d.t !== 'I') || !d.s || !(d.s.w || d.s.acm)) return;
           tv = true; const w = d.s.w;
           if (w && /^(sin|tri|saw)$/.test(w.t) && w.a[2] > 0) f = f ? Math.min(f, w.a[2]) : w.a[2];
           else if (w && w.t === 'pulse' && w.a[6] > 0) f = f ? Math.min(f, 1 / w.a[6]) : 1 / w.a[6];
         });
         if (tv) {
-          if (RS.tran && RS.tran.X && RS.tran.X.length > 1) tvF = RS.tran.X;
+          if (RES.tran && RES.tran.X && RES.tran.X.length > 1) tvF = RES.tran.X;
           else {
             const stop = f ? 4 / f : 1, P = S.P, P2 = Object.assign(Object.create(Object.getPrototypeOf(P)), P, { dirs: P.dirs.concat(['.tran ' + (stop / 800).toExponential(3) + ' ' + stop.toExponential(3)]) });
             const R2 = runSim(P2);
@@ -82,36 +79,36 @@
   }
   function cur() {
     window.FXSEL = { k: 'op', i: -1 };   /* which solver frame is on screen (read by switch-ui.js for relay contacts) */
-    if (steady() && RS.op.x) return RS.op.x;
+    if (steady() && RES.op.x) return RES.op.x;
     const fr = frames();
     if (fr) {
-      if (ANIM.on && ANIM.k === 'tran' && RS.tran && fr === RS.tran.X && ANIM.idx != null && fr[ANIM.idx]) { window.FXSEL = { k: 'tran', i: ANIM.idx }; return fr[ANIM.idx]; }
+      if (ANIM.on && ANIM.k === 'tran' && RES.tran && fr === RES.tran.X && ANIM.idx != null && fr[ANIM.idx]) { window.FXSEL = { k: 'tran', i: ANIM.idx }; return fr[ANIM.idx]; }
       const ix = Math.min(fr.length - 1, Math.floor(((performance.now() % 8000) / 8000) * fr.length));
-      if (RS.tran && fr === RS.tran.X) window.FXSEL = { k: 'tran', i: ix };
+      if (RES.tran && fr === RES.tran.X) window.FXSEL = { k: 'tran', i: ix };
       return fr[ix];
     }
     if (ANIM.on && ANIM.idx != null) {
-      if (ANIM.k === 'tran' && RS.tran && RS.tran.X[ANIM.idx]) { window.FXSEL = { k: 'tran', i: ANIM.idx }; return RS.tran.X[ANIM.idx]; }
-      if (ANIM.k === 'dc' && RS.dc && RS.dc.X[ANIM.idx]) { window.FXSEL = { k: 'dc', i: ANIM.idx }; return RS.dc.X[ANIM.idx]; }
+      if (ANIM.k === 'tran' && RES.tran && RES.tran.X[ANIM.idx]) { window.FXSEL = { k: 'tran', i: ANIM.idx }; return RES.tran.X[ANIM.idx]; }
+      if (ANIM.k === 'dc' && RES.dc && RES.dc.X[ANIM.idx]) { window.FXSEL = { k: 'dc', i: ANIM.idx }; return RES.dc.X[ANIM.idx]; }
     }
-    return RS.op.x;
+    return RES.op.x;
   }
   function rated() {
-    if (rvR !== RS) {
-      rvR = RS; let m = 0;
-      RS.C.devs.forEach((d) => {
+    if (rvR !== RES) {
+      rvR = RES; let m = 0;
+      RES.C.devs.forEach((d) => {
         if (d.t !== 'V' || !d.s) return;
         let k = Math.abs(d.s.dc || 0); const w = d.s.w, a = w ? w.a.map((x) => Math.abs(x) || 0) : [];
         if (w) k = w.t === 'pwl' ? Math.max(0, ...a.filter((_, i) => i % 2)) : w.t === 'pulse' ? Math.max(a[0] || 0, a[1] || 0) : (a[0] || 0) + (a[1] || 0) * (w.t === 'noise' ? 3 : 1);
         m = Math.max(m, k);
       });
-      if (RS.dc && !RS.dc.cur) RS.dc.xs.forEach((v) => { m = Math.max(m, Math.abs(v)); });
+      if (RES.dc && !RES.dc.cur) RES.dc.xs.forEach((v) => { m = Math.max(m, Math.abs(v)); });
       rv = m > 0.01 ? m : 12;
     }
     return rv;
   }
   function dev(n) {
-    if (dvR !== RS) { dvR = RS; dv = new Map(); RS.C.devs.forEach((d) => dv.set(String(d.nm).toLowerCase(), d)); }
+    if (dvR !== RES) { dvR = RES; dv = new Map(); RES.C.devs.forEach((d) => dv.set(String(d.nm).toLowerCase(), d)); }
     return dv.get(String(n).toLowerCase());
   }
   function target(p, x, R) {
@@ -145,7 +142,6 @@
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
     let parts; try { parts = S.M.parts; } catch (e) { return; }
-    RS = window.CR ? window.CR() : null;   /* circuit alive (power switch ON, netlist runnable) - not tied to Run / Stop */
     const on = live(), x = on ? cur() : null, R = on ? rated() : 12;
     const ease = (c, g, tr, tf) => c + (g - c) * (1 - Math.exp(-dt / (g > c ? tr : tf)));
     parts.forEach((p) => {
