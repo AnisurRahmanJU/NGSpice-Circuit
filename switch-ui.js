@@ -30,12 +30,22 @@
   /* ---------- power switch gate ---------- */
   function offGuard() {
     if (!masterOff()) return false;
+    try { clearTimeout(simT); } catch (e) { /* ignore */ }
     try { if (window.fullStopSim) window.fullStopSim(); } catch (e) { /* ignore */ }
     try { RES = null; SIMLIVE = false; } catch (e) { /* ignore */ }
     try { const st = $id('simst'); if (st) st.innerHTML = '<span class="wn">' + MSG + '</span>'; const o = $id('out'); if (o) o.innerHTML = '<p class="empty">' + MSG + '</p>'; toast(MSG, 'info'); } catch (e) { /* ignore */ }
     return true;
   }
   window.SWUI = { offGuard, masterOff };
+
+  /* While the power switch is OFF no simulation may run (auto-run timer, Run button, anything else) */
+  const runSimUI0 = window.runSimUI;
+  if (typeof runSimUI0 === 'function') {
+    window.runSimUI = function () {
+      if (masterOff()) { offGuard(); return; }
+      return runSimUI0.apply(this, arguments);
+    };
+  }
   const runNow = () => { const b = $id('bRunSim'); if (b) setTimeout(() => b.click(), 30); };
 
   /* ---------- unused switch / relay library lines are removed from the netlist ---------- */
