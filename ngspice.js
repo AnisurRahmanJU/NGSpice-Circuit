@@ -1629,7 +1629,7 @@ const RUN_MSG='Please Run Simulation or NGSpice Code';
 function needRun(){try{const st=document.getElementById('simst');if(st)st.innerHTML=`<span class="wn">⚠ ${RUN_MSG}</span>`;toast(RUN_MSG,'info')}catch(e){}}
 /* Download is allowed only after a successful run of the CURRENT netlist; the graph/legend/tables are read live, so ticking/unticking traces (checkboxes) or re-running is always reflected */
 function exReady(){const o=$('#out'),ok=RES&&RES.op&&!(RES.errs&&RES.errs.length)&&RUNSIG!==null&&RUNSIG===simSig($('#src').value)&&o&&o.innerHTML.trim();
-  if(!ok)toast('Please turn ON Simu/VirtuScope First, then Download Image.');return !!ok}
+  if(!ok)toast('Please turn ON switch of scope first, then download image.');return !!ok}
 $('#bSvg').onclick=()=>{if(!exReady())return;const s=svgString();if(s)dl(fname()+'.svg',new Blob([s],{type:'image/svg+xml'}))};
 $('#bPng').onclick=()=>{if(!exReady())return;const s=svgString();if(!s)return;const m=/viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(s),k=Math.min(2,8000/Math.max(+m[1],+m[2])),w=Math.round(+m[1]*k),h=Math.round(+m[2]*k),img=new Image();
   img.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(img,0,0,w,h);c.toBlob(bl=>dl(fname()+'.png',bl))};img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)};
