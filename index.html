@@ -726,5 +726,51 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 })();
 </script>
+  
+<!-- Always start in Realistic mode (Schematic still available via the rocker / T key)-->
+<script>
+(function () {
+  var rocker, userTouched = false, tries = 0;
+
+  function isReal() {
+    return rocker && rocker.getAttribute("aria-checked") === "true";
+  }
+
+  function forceRealistic() {
+    if (userTouched || !rocker) return;
+    if (isReal()) return;                 // already realistic, nothing to do
+    rocker.click();                       // uses the app's own toggle code
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    rocker = document.getElementById("viewRocker");
+    if (!rocker) return;
+
+    // If you change the view yourself, stop forcing Realistic
+    rocker.addEventListener("pointerdown", function () { userTouched = true; }, true);
+    rocker.addEventListener("keydown", function () { userTouched = true; }, true);
+    var lblS = document.getElementById("vlSch"), lblR = document.getElementById("vlReal");
+    [lblS, lblR].forEach(function (l) {
+      if (l) l.addEventListener("pointerdown", function () { userTouched = true; }, true);
+    });
+    document.addEventListener("keydown", function (e) {
+      var t = e.target && e.target.tagName;
+      if ((e.key === "t" || e.key === "T") && t !== "INPUT" && t !== "TEXTAREA" && t !== "SELECT") {
+        userTouched = true;
+      }
+    }, true);
+
+    // Apply at startup (retry briefly, in case the other scripts finish loading later)
+    (function apply() {
+      forceRealistic();
+      if (!isReal() && !userTouched && tries++ < 20) setTimeout(apply, 150);
+    })();
+  });
+
+  window.addEventListener("load", function () {
+    setTimeout(forceRealistic, 100);
+  });
+})();
+</script>
 </body>
 </html>
