@@ -390,11 +390,16 @@
     var imax = 0;
     geom.edges.forEach(function (e) { imax = Math.max(imax, Math.abs(e.I)); });
     var mult = (CFG.multipliers[speedMode] || 1);
-    /* A burnt part / blown fuse is an open circuit (1 Gohm): only nano-amps of leakage remain. Because the speed is relative to the
-       strongest wire, that leakage would look like full current. So once something is burnt, every wire carrying less than 10 uA (voltmeter leakage included) is DEAD:
+    /* A burnt part / blown fuse / DMM with the dial on OFF is an open circuit (1 Gohm): only nano-amps of leakage remain. Because the speed is relative to the
+       strongest wire, that leakage would look like full current. So once something is burnt (or a DMM is OFF), every wire carrying less than 10 uA (voltmeter leakage included) is DEAD:
        its electrons are hidden and do not move at all (no electron flow through a blown fuse or past a burnt part). */
     var burnt = false;
-    try { burnt = S.M.parts.some(function (q) { return q.bn; }); } catch (e) { burnt = false; }
+    try {
+      burnt = S.M.parts.some(function (q) {
+        return q.bn ||                                                          /* burnt part / blown fuse */
+               (q.t === "DMM" && window.DMM && window.DMM.mode(q) === "off");   /* DMM dial on OFF = open circuit */
+      });
+    } catch (e) { burnt = false; }
 
     dots.forEach(function (d) {
       var I = d.e.I, rel = imax > 0 ? Math.abs(I) / imax : 0, idle = !(rel >= CFG.threshold);
