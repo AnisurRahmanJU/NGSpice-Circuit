@@ -1,5 +1,5 @@
 /* live-effects.js — makes Bulb, LED, Fan and the Ammeter / Voltmeter / DMM (dmm.js) come alive while a simulation runs, and BURNS / short-circuits them when overloaded
-   (Ammeter, Voltmeter and DMM short-circuit at 10000 A, LED 20 mA, Bulb / Fan / Buzzer 12 V + 200 mA, capacitors 25 V, electrolytic reverse polarity, 100 kHz cap / low-reactance (<= 2 ohm or DC) inductor short circuit, fuse blows, fire + char; wires + red / - green).
+   (Ammeter and Voltmeter short-circuit at 10000 A, the DMM at 100 A, LED 20 mA, Bulb / Fan / Buzzer 12 V + 200 mA, capacitors 25 V, electrolytic reverse polarity, 100 kHz cap / low-reactance (<= 2 ohm or DC) inductor short circuit, fuse blows, fire + char; wires + red / - green).
    Load AFTER ngspice.js.  Everything follows the CIRCUIT: dark / blank while the power switch is OFF or the netlist is not runnable, alive otherwise
    (the Run / Stop buttons only control the simulation output and do not change it).
    Bulb / Fan strength = voltage across the part relative to the largest source voltage in the circuit.
@@ -203,7 +203,7 @@
      Limits:  LED 20 mA | Bulb, Fan and Buzzer 12 V and 200 mA (a buzzer on an AC source is rated in RMS: 12 V / 200 mA RMS = 17 V / 283 mA peak) | Capacitor 25 V | Electrolytic 25 V and NO reverse polarity |
               Capacitor / electrolytic: 100 kHz and above = reactance so low it is a short circuit | Inductor: reactance
               <= 2 ohm (or DC) and current > 1 A = reactance so low it is a short circuit | Fuse: blows above its rated
-              current (the fuse part stays, only the circuit opens) | any source that has to deliver 20 A or more = short circuit. | Ammeter / Voltmeter / DMM: 10000 A through the meter = short circuit (burns, stays open).
+              current (the fuse part stays, only the circuit opens) | any source that has to deliver 20 A or more = short circuit. | Ammeter / Voltmeter: 10000 A, DMM: 100 A through the meter = short circuit (burns, stays open).
      A part that is overloaded heats up (smoke, sparks), then burns (flames, black char) and stays burnt = open circuit
      (p.bn = 1, genNetlist writes it as an open circuit; Undo brings it back).  Wires: + terminal red, - terminal green;
      a short circuit never colours a wire red - it shows fire instead.
@@ -288,10 +288,11 @@
       const i = Math.abs(V(d.a) - V(d.b)) * d.g, rt = fuseA(p.v);
       return i > rt * 1.005 ? { r: 3 + i / rt, m: 'Current ' + fm(i, 'A') + ' is above the ' + rt + ' A rating' } : null;
     }
-    /* Ammeter / Voltmeter / DMM: 10000 A through the meter = short circuit (the meter burns, fire + char, and stays open) */
+    /* Ammeter / Voltmeter: 10000 A, DMM: 100 A through the meter = short circuit (the meter burns, fire + char, and stays open) */
     if (p.t === 'AM' || p.t === 'VM' || p.t === 'DMM') {
       const i = d.t === 'V' ? Math.abs(x[d.k] || 0) : Math.abs(V(d.a) - V(d.b)) * (d.g || 0);
-      return i >= LIM.meterI ? { r: i / LIM.meterI, m: 'Short circuit: ' + NAME[p.t] + ' has to pass ' + fm(i, 'A') + ' (limit 10000 A)' } : null;
+      const lim = p.t === 'DMM' && window.DMM && window.DMM.maxA ? window.DMM.maxA() : LIM.meterI;   /* DMM: 100 A (real life), Ammeter / Voltmeter: 10000 A */
+      return i >= lim ? { r: i / lim, m: 'Short circuit: ' + NAME[p.t] + ' has to pass ' + fm(i, 'A') + ' (limit ' + lim + ' A)' } : null;
     }
     if (p.t === 'V' && d.t === 'V') {
       const i = Math.abs(x[d.k] || 0);
