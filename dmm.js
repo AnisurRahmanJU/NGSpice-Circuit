@@ -19,8 +19,7 @@
    Click the dial on the canvas: a click on a dial label jumps to it, a click on the left / right half of the knob turns it
    one step anticlockwise / clockwise.  The Inspector has the same choice as a drop-down.
 
-   The rubber holster (outer rounded frame) is red, the body inside stays dark grey. The reading (live-effects.js) is shown on the LCD with 7-segment digits (seg7.js) in 3 3/4 digits (4000 counts) with auto-range; OL = over-range
-   (above 1000 V or above 10 A).  The part burns / short-circuits at 10000 A like the Ammeter and Voltmeter (live-effects.js). */
+   The rubber holster (outer rounded frame) is red, the body inside stays dark grey. The reading (live-effects.js) is shown on the LCD with 7-segment digits (seg7.js) in 4 digits (9999 counts) with auto-range (A: nA..kA, SHORT from 10000 kA; ohm: mohm..Mohm, OL above 100.0 Mohm; V: uV..MV, OL above 100.0 MV).  The part burns / short-circuits at 10000 A like the Ammeter and Voltmeter (live-effects.js). */
 (function () {
   'use strict';
   if (typeof SYMS === 'undefined' || typeof S === 'undefined') return;     /* ngspice.js not loaded */
@@ -40,21 +39,30 @@
   /* mode of a part: the model field (kept by Duplicate / Undo) first, then the element name (netlist typed by hand) */
   const modeOf = (p) => (p && INFO[p.dm] ? p.dm : modeOfName(p && p.n)) || 'dv';
 
-  /* ---------- LCD text: 3 3/4 digits, auto-range.  v = measured value (V or A).  Returns { t: digits, u: unit } ---------- */
-  const RANGES = {
-    V: [[0.4, 1e-3, 1, 'mV'], [4, 1, 3, 'V'], [40, 1, 2, 'V'], [400, 1, 1, 'V'], [1000, 1, 0, 'V']],
-    R: [[400, 1, 1, 'Ω'], [4e3, 1e3, 3, 'kΩ'], [40e3, 1e3, 2, 'kΩ'], [400e3, 1e3, 1, 'kΩ'], [4e6, 1e6, 3, 'MΩ'], [40e6, 1e6, 2, 'MΩ']],
-    A: [[400e-6, 1e-6, 1, 'µA'], [4e-3, 1e-3, 3, 'mA'], [40e-3, 1e-3, 2, 'mA'], [400e-3, 1e-3, 1, 'mA'], [4, 1, 3, 'A'], [10, 1, 2, 'A']]
+  /* ---------- LCD text: 4 digits (max 9999), auto-range.  v = measured value (V, A or ohm).  Returns { t: digits, u: unit } ----------
+     Every kind has a ladder of units [scale in base units, label].  The unit is the biggest one the value reaches (so the display never
+     shows 1000 of a unit: it moves up to 1.000 of the next one); the decimals keep 4 significant digits (9.999 / 99.99 / 999.9 / 9999).
+       Current     nA -> uA -> mA -> A -> kA     up to 9999 kA, from 10000 kA the display shows SHORT
+       Resistance  mOhm -> Ohm -> kOhm -> MOhm   up to 100.0 MOhm, above that OL
+       Voltage     uV -> mV -> V -> kV -> MV     up to 100.0 MV,   above that OL */
+  const LADDER = {
+    A: { u: [[1e-9, 'nA'], [1e-6, 'µA'], [1e-3, 'mA'], [1, 'A'], [1e3, 'kA']], base: 3, max: 9.999e6, over: 'SHORT', floor: 1e-12 },
+    R: { u: [[1e-3, 'mΩ'], [1, 'Ω'], [1e3, 'kΩ'], [1e6, 'MΩ']], base: 1, max: 100e6, over: 'OL', floor: 1e-6 },
+    V: { u: [[1e-6, 'µV'], [1e-3, 'mV'], [1, 'V'], [1e3, 'kV'], [1e6, 'MV']], base: 2, max: 100e6, over: 'OL', floor: 5e-10 }
   };
+  const dec = (x) => (x < 10 ? 3 : x < 100 ? 2 : x < 1000 ? 1 : 0);          /* 4 significant digits */
   function format(mode, v) {
     const I = INFO[mode]; if (!I || !I.kind) return { t: '', u: '' };
-    if (!isFinite(v)) return { t: 'OL', u: I.kind === 'R' ? 'Ω' : '' };
-    let a = Math.abs(v); if (a < 1e-12) a = 0;
-    const R = RANGES[I.kind], top = R[R.length - 1];
-    if (a > top[0] * 1.0005) return { t: 'OL', u: top[3] };
-    const r = R.find((q) => a <= q[0] * 1.0005) || top;
-    const s = (a / r[1]).toFixed(r[2]);
-    return { t: (v < 0 && a !== 0 ? '-' : '') + s, u: r[3] };
+    const L = LADDER[I.kind], top = L.u[L.u.length - 1][1], base = L.u[L.base][1];
+    if (isNaN(v)) return { t: L.over, u: I.kind === 'A' ? top : base };       /* no value */
+    let a = Math.abs(v); if (a < L.floor) a = 0;
+    if (!isFinite(a) || a > L.max * (I.kind === 'A' ? 1.00005 : 1.0005) || Number(a.toPrecision(4)) >= (I.kind === 'A' ? 1e7 : Infinity))
+      return { t: L.over, u: I.kind === 'A' ? top : base };                   /* SHORT (>= 10000 kA) / OL */
+    if (a === 0) return { t: (0).toFixed(3), u: base };                       /* zero: shown in the base unit */
+    const r4 = Number(a.toPrecision(4));                                      /* the value as it will be shown (rounding can reach the next unit) */
+    let k = 0; for (let i = 0; i < L.u.length; i++) if (r4 >= L.u[i][0] * (1 - 1e-9)) k = i;
+    const x = a / L.u[k][0], s = x.toFixed(dec(x));
+    return { t: (v < 0 ? '-' : '') + s, u: L.u[k][1] };
   }
 
   /* ---------- drawing (local coordinates, 1 grid = 10 px, pins 2 grid units either side of the centre line) ---------- */
@@ -239,7 +247,7 @@
       const P = $id('pProp'), head = P.querySelector('.ph'), m = modeOf(p);
       const fv = $id('fV'); if (fv) { fv.readOnly = true; if (fv.parentNode) fv.parentNode.firstChild.textContent = 'Internal element (set by the dial)'; }
       const h = `<div class="field">Dial position<select id="dmmMode">${MODES.map((k) => `<option value="${k}" ${k === m ? 'selected' : ''}>${INFO[k].lab}  ${INFO[k].name}</option>`).join('')}</select></div>
-        <p class="hint">Red probe = pin 1 (+), black probe = COM. Click the dial on the canvas to turn it. <b>V</b> positions put 10 MΩ across the probes (parallel, like a voltmeter); <b>Ω</b> applies a 0.4 V test voltage and reads R = 0.4 V / current: measure a resistor with the circuit <b>unpowered</b> (other sources falsify the reading; OL = open circuit or above 40 MΩ). <b>A</b> positions are a 0 V series element (in the path, like an ammeter). AC positions read true RMS of the AC part. OL = over-range (above 1000 V or 10 A). Like the Ammeter and Voltmeter the DMM short-circuits and burns at 10000 A.</p>`;
+        <p class="hint">Red probe = pin 1 (+), black probe = COM. Click the dial on the canvas to turn it. <b>V</b> positions put 10 MΩ across the probes (parallel, like a voltmeter); <b>Ω</b> applies a 0.4 V test voltage and reads R = 0.4 V / current: measure a resistor with the circuit <b>unpowered</b> (other sources falsify the reading; OL = open circuit or above 100.0 MΩ). <b>A</b> positions are a 0 V series element (in the path, like an ammeter). AC positions read true RMS of the AC part. OL = over-range (above 100.0 MV or 100.0 MΩ); the A ranges read up to 9999 kA and show SHORT from 10000 kA. Like the Ammeter and Voltmeter the DMM short-circuits and burns at 10000 A.</p>`;
       if (head) head.insertAdjacentHTML('afterend', h);
     } catch (e) { /* inspector extras are optional */ }
   };
