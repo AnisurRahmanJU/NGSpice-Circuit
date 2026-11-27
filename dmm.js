@@ -19,7 +19,7 @@
    Click the dial on the canvas: a click on a dial label jumps to it, a click on the left / right half of the knob turns it
    one step anticlockwise / clockwise.  The Inspector has the same choice as a drop-down.
 
-   The rubber holster (outer rounded frame) is red, the body inside stays dark grey. The reading (live-effects.js) is shown on the LCD with 7-segment digits (seg7.js) in 3 3/4 digits (3999 counts) with auto-range, REAL-LIFE limits: V= OL above 1000 V, V~ OL above 750 V, ohm OL above 40 Mohm, A OL above 10 A and SHORT at 100 A
+   The rubber holster (outer rounded frame) is red, the body inside stays dark grey. The reading (live-effects.js) is shown on the LCD with 7-segment digits (seg7.js) in 3 3/4 digits (3999 counts) with auto-range, REAL-LIFE limits: V= OL above 600 V, V~ OL above 600 V, ohm OL above 4 Mohm, A OL above 10 A and SHORT at 100 A
    (the meter burns at 100 A).  DMM.setRange('ext') switches to the extended simulator ranges (nA..kA, uV..MV, mohm..Mohm).  The part burns / short-circuits at 100 A (DMM.maxA()) (live-effects.js). */
 (function () {
   'use strict';
@@ -66,17 +66,18 @@
     return { t: (v < 0 ? '-' : '') + s, u: L.u[k][1] };
   }
 
-  /* ---------- REAL-LIFE ranges (default): a 3 3/4 digit handheld, 3999 counts, like the Tecpel DMM-8060 ----------
+  /* ---------- REAL-LIFE ranges (default): a handheld with the dial of the photo (200 / 2k / 20k ... positions) but in the 4-type ranges
+     (400 / 4 / 40 / 400, 3999 counts) instead of the 2-type ones (200 / 2 / 20 / 200, 1999 counts).
      [full scale, divisor, decimals, unit]: the first range whose full scale holds the value is used.
-       DC volts   400.0 mV / 4.000 V / 40.00 V / 400.0 V / 1000 V        above 1000 V  -> OL
-       AC volts   same, true RMS, up to 750 V                            above 750 V   -> OL
-       Current    400.0 uA / 4000 uA / 40.00 mA / 400.0 mA / 4.000 A / 10.00 A      above 10 A -> OL,  100 A or more -> SHORT (the meter is shorted / fuse blows)
-       Resistance 400.0 ohm / 4.000 k / 40.00 k / 400.0 k / 4.000 M / 40.00 M       above 40 Mohm or open -> OL */
+       DC volts   400.0 mV / 4.000 V / 40.00 V / 400.0 V / 600 V         above 600 V  -> OL
+       AC volts   400.0 V / 600 V (true RMS)                             above 600 V  -> OL
+       Current    400.0 uA / 4.000 mA / 40.00 mA / 400.0 mA / 10.00 A    above 10 A   -> OL,  100 A or more -> SHORT (the meter is shorted / fuse blows)
+       Resistance 400.0 ohm / 4.000 k / 40.00 k / 400.0 k / 4.000 M      above 4 Mohm or open -> OL */
   const REAL = {
-    V:  [[0.4, 1e-3, 1, 'mV'], [4, 1, 3, 'V'], [40, 1, 2, 'V'], [400, 1, 1, 'V'], [1000, 1, 0, 'V']],
-    VA: [[0.4, 1e-3, 1, 'mV'], [4, 1, 3, 'V'], [40, 1, 2, 'V'], [400, 1, 1, 'V'], [750, 1, 0, 'V']],
-    R:  [[400, 1, 1, 'Ω'], [4e3, 1e3, 3, 'kΩ'], [40e3, 1e3, 2, 'kΩ'], [400e3, 1e3, 1, 'kΩ'], [4e6, 1e6, 3, 'MΩ'], [40e6, 1e6, 2, 'MΩ']],
-    A:  [[400e-6, 1e-6, 1, 'µA'], [4e-3, 1e-6, 0, 'µA'], [40e-3, 1e-3, 2, 'mA'], [400e-3, 1e-3, 1, 'mA'], [4, 1, 3, 'A'], [10, 1, 2, 'A']]
+    V:  [[0.4, 1e-3, 1, 'mV'], [4, 1, 3, 'V'], [40, 1, 2, 'V'], [400, 1, 1, 'V'], [600, 1, 0, 'V']],
+    VA: [[400, 1, 1, 'V'], [600, 1, 0, 'V']],
+    R:  [[400, 1, 1, 'Ω'], [4e3, 1e3, 3, 'kΩ'], [40e3, 1e3, 2, 'kΩ'], [400e3, 1e3, 1, 'kΩ'], [4e6, 1e6, 3, 'MΩ']],
+    A:  [[400e-6, 1e-6, 1, 'µA'], [4e-3, 1e-3, 3, 'mA'], [40e-3, 1e-3, 2, 'mA'], [400e-3, 1e-3, 1, 'mA'], [10, 1, 2, 'A']]
   };
   const SHORT_A = 100;                                                         /* real DMM: 100 A through the meter = short circuit */
   function formatReal(mode, v) {
@@ -277,7 +278,7 @@
       const P = $id('pProp'), head = P.querySelector('.ph'), m = modeOf(p);
       const fv = $id('fV'); if (fv) { fv.readOnly = true; if (fv.parentNode) fv.parentNode.firstChild.textContent = 'Internal element (set by the dial)'; }
       const h = `<div class="field">Dial position<select id="dmmMode">${MODES.map((k) => `<option value="${k}" ${k === m ? 'selected' : ''}>${INFO[k].lab}  ${INFO[k].name}</option>`).join('')}</select></div>
-        <p class="hint">Red probe = pin 1 (+), black probe = COM. Click the dial on the canvas to turn it. <b>V</b> positions put 10 MΩ across the probes (parallel, like a voltmeter); <b>Ω</b> applies a 0.4 V test voltage and reads R = 0.4 V / current: measure a resistor with the circuit <b>unpowered</b> (other sources falsify the reading; OL = open circuit or above 40 MΩ). <b>A</b> positions are a 0 V series element (in the path, like an ammeter). AC positions read true RMS of the AC part. OL = over-range (above 1000 V DC, 750 V AC or 10 A); at 100 A the DMM shows SHORT, short-circuits and burns. The DMM short-circuits and burns at 100 A.</p>`;
+        <p class="hint">Red probe = pin 1 (+), black probe = COM. Click the dial on the canvas to turn it. <b>V</b> positions put 10 MΩ across the probes (parallel, like a voltmeter); <b>Ω</b> applies a 0.4 V test voltage and reads R = 0.4 V / current: measure a resistor with the circuit <b>unpowered</b> (other sources falsify the reading; OL = open circuit or above 4 MΩ). <b>A</b> positions are a 0 V series element (in the path, like an ammeter). AC positions read true RMS of the AC part. OL = over-range (above 600 V, 10 A or 4 MΩ); at 100 A the DMM shows SHORT, short-circuits and burns. The DMM short-circuits and burns at 100 A.</p>`;
       if (head) head.insertAdjacentHTML('afterend', h);
     } catch (e) { /* inspector extras are optional */ }
   };
