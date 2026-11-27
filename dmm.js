@@ -19,7 +19,8 @@
    Click the dial on the canvas: a click on a dial label jumps to it, a click on the left / right half of the knob turns it
    one step anticlockwise / clockwise.  The Inspector has the same choice as a drop-down.
 
-   The rubber holster (outer rounded frame) is red, the body inside stays dark grey. The reading (live-effects.js) is shown on the LCD with 7-segment digits (seg7.js) in 4 digits (9999 counts) with auto-range (A: nA..kA, SHORT from 10000 kA; ohm: mohm..Mohm, OL above 100.0 Mohm; V: uV..MV, OL above 100.0 MV).  The part burns / short-circuits at 10000 A like the Ammeter and Voltmeter (live-effects.js). */
+   The rubber holster (outer rounded frame) is red, the body inside stays dark grey. The reading (live-effects.js) is shown on the LCD with 7-segment digits (seg7.js) in 3 3/4 digits (3999 counts) with auto-range, REAL-LIFE limits: V= OL above 1000 V, V~ OL above 750 V, ohm OL above 40 Mohm, A OL above 10 A and SHORT at 100 A
+   (the meter burns at 100 A).  DMM.setRange('ext') switches to the extended simulator ranges (nA..kA, uV..MV, mohm..Mohm).  The part burns / short-circuits at 100 A (DMM.maxA()) (live-effects.js). */
 (function () {
   'use strict';
   if (typeof SYMS === 'undefined' || typeof S === 'undefined') return;     /* ngspice.js not loaded */
@@ -51,7 +52,7 @@
     V: { u: [[1e-6, 'µV'], [1e-3, 'mV'], [1, 'V'], [1e3, 'kV'], [1e6, 'MV']], base: 2, max: 100e6, over: 'OL', floor: 5e-10 }
   };
   const dec = (x) => (x < 10 ? 3 : x < 100 ? 2 : x < 1000 ? 1 : 0);          /* 4 significant digits */
-  function format(mode, v) {
+  function formatExt(mode, v) {
     const I = INFO[mode]; if (!I || !I.kind) return { t: '', u: '' };
     const L = LADDER[I.kind], top = L.u[L.u.length - 1][1], base = L.u[L.base][1];
     if (isNaN(v)) return { t: L.over, u: I.kind === 'A' ? top : base };       /* no value */
@@ -64,6 +65,35 @@
     const x = a / L.u[k][0], s = x.toFixed(dec(x));
     return { t: (v < 0 ? '-' : '') + s, u: L.u[k][1] };
   }
+
+  /* ---------- REAL-LIFE ranges (default): a 3 3/4 digit handheld, 3999 counts, like the Tecpel DMM-8060 ----------
+     [full scale, divisor, decimals, unit]: the first range whose full scale holds the value is used.
+       DC volts   400.0 mV / 4.000 V / 40.00 V / 400.0 V / 1000 V        above 1000 V  -> OL
+       AC volts   same, true RMS, up to 750 V                            above 750 V   -> OL
+       Current    400.0 uA / 4000 uA / 40.00 mA / 400.0 mA / 4.000 A / 10.00 A      above 10 A -> OL,  100 A or more -> SHORT (the meter is shorted / fuse blows)
+       Resistance 400.0 ohm / 4.000 k / 40.00 k / 400.0 k / 4.000 M / 40.00 M       above 40 Mohm or open -> OL */
+  const REAL = {
+    V:  [[0.4, 1e-3, 1, 'mV'], [4, 1, 3, 'V'], [40, 1, 2, 'V'], [400, 1, 1, 'V'], [1000, 1, 0, 'V']],
+    VA: [[0.4, 1e-3, 1, 'mV'], [4, 1, 3, 'V'], [40, 1, 2, 'V'], [400, 1, 1, 'V'], [750, 1, 0, 'V']],
+    R:  [[400, 1, 1, 'Ω'], [4e3, 1e3, 3, 'kΩ'], [40e3, 1e3, 2, 'kΩ'], [400e3, 1e3, 1, 'kΩ'], [4e6, 1e6, 3, 'MΩ'], [40e6, 1e6, 2, 'MΩ']],
+    A:  [[400e-6, 1e-6, 1, 'µA'], [4e-3, 1e-6, 0, 'µA'], [40e-3, 1e-3, 2, 'mA'], [400e-3, 1e-3, 1, 'mA'], [4, 1, 3, 'A'], [10, 1, 2, 'A']]
+  };
+  const SHORT_A = 100;                                                         /* real DMM: 100 A through the meter = short circuit */
+  function formatReal(mode, v) {
+    const I = INFO[mode]; if (!I || !I.kind) return { t: '', u: '' };
+    const R = REAL[I.kind === 'V' && I.ac ? 'VA' : I.kind], top = R[R.length - 1];
+    if (isNaN(v)) return { t: 'OL', u: top[3] };
+    let a = Math.abs(v); if (a < 1e-12) a = 0;
+    if (I.kind === 'A' && a >= SHORT_A) return { t: 'SHORT', u: 'A' };
+    if (!isFinite(a) || a > top[0] * 1.0005) return { t: 'OL', u: I.kind === 'R' ? 'Ω' : top[3] };
+    const r = R.find((q) => a <= q[0] * 1.0005) || top;
+    return { t: (v < 0 && a !== 0 ? '-' : '') + (a / r[1]).toFixed(r[2]), u: r[3] };
+  }
+  /* DMM.range: 'real' (default, handheld limits) or 'ext' (nA..kA, uV..MV, mohm..Mohm) */
+  let RANGE = 'real';
+  const format = (mode, v) => (RANGE === 'ext' ? formatExt : formatReal)(mode, v);
+  const setRange = (r) => { RANGE = r === 'ext' ? 'ext' : 'real'; try { draw(); } catch (e) { /* ignore */ } };
+  const maxA = () => (RANGE === 'ext' ? 10000 : SHORT_A);                      /* current at which the DMM burns / shorts (live-effects.js) */
 
   /* ---------- drawing (local coordinates, 1 grid = 10 px, pins 2 grid units either side of the centre line) ---------- */
   const JX = { a10: -30, ma: -10, com: 10, vw: 30 }, JY = 58, DY = 20;   /* DY = dial centre */               /* jack positions */
@@ -247,7 +277,7 @@
       const P = $id('pProp'), head = P.querySelector('.ph'), m = modeOf(p);
       const fv = $id('fV'); if (fv) { fv.readOnly = true; if (fv.parentNode) fv.parentNode.firstChild.textContent = 'Internal element (set by the dial)'; }
       const h = `<div class="field">Dial position<select id="dmmMode">${MODES.map((k) => `<option value="${k}" ${k === m ? 'selected' : ''}>${INFO[k].lab}  ${INFO[k].name}</option>`).join('')}</select></div>
-        <p class="hint">Red probe = pin 1 (+), black probe = COM. Click the dial on the canvas to turn it. <b>V</b> positions put 10 MΩ across the probes (parallel, like a voltmeter); <b>Ω</b> applies a 0.4 V test voltage and reads R = 0.4 V / current: measure a resistor with the circuit <b>unpowered</b> (other sources falsify the reading; OL = open circuit or above 100.0 MΩ). <b>A</b> positions are a 0 V series element (in the path, like an ammeter). AC positions read true RMS of the AC part. OL = over-range (above 100.0 MV or 100.0 MΩ); the A ranges read up to 9999 kA and show SHORT from 10000 kA. Like the Ammeter and Voltmeter the DMM short-circuits and burns at 10000 A.</p>`;
+        <p class="hint">Red probe = pin 1 (+), black probe = COM. Click the dial on the canvas to turn it. <b>V</b> positions put 10 MΩ across the probes (parallel, like a voltmeter); <b>Ω</b> applies a 0.4 V test voltage and reads R = 0.4 V / current: measure a resistor with the circuit <b>unpowered</b> (other sources falsify the reading; OL = open circuit or above 40 MΩ). <b>A</b> positions are a 0 V series element (in the path, like an ammeter). AC positions read true RMS of the AC part. OL = over-range (above 1000 V DC, 750 V AC or 10 A); at 100 A the DMM shows SHORT, short-circuits and burns. The DMM short-circuits and burns at 100 A.</p>`;
       if (head) head.insertAdjacentHTML('afterend', h);
     } catch (e) { /* inspector extras are optional */ }
   };
@@ -257,5 +287,5 @@
   });
 
   defs();
-  window.DMM = { modes: MODES, info: INFO, mode: modeOf, format, setMode, draw: drawDMM };
+  window.DMM = { modes: MODES, info: INFO, mode: modeOf, format, setMode, draw: drawDMM, setRange, maxA, get range() { return RANGE; } };
 })();
