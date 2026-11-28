@@ -116,12 +116,18 @@ var EMBED_CSS="html,body{overflow:hidden!important;height:100%}header.top,footer
 var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){var c=x.target.closest(".tp");c._ready=true;load(c);io.unobserve(x.target)}})},{rootMargin:"400px"});
 /* Safety net for hosts (GitHub Pages, Vercel) that drop ?embed=1 on a redirect:
    the iframe is same-origin, so hide the full UI and pick the example from here */
+function fit(d){try{var b=d.getElementById("tFit");if(b)b.click()}catch(e){}}
+function fitAll(d){[300,900,1600,2600,4000].forEach(function(ms){setTimeout(function(){fit(d)},ms)})}
 function fix(f,c){
  try{var w=f.contentWindow,d=f.contentDocument;if(!d||!d.head)return;
   if(!d.getElementById("embedFix")){var st=d.createElement("style");st.id="embedFix";st.textContent=EMBED_CSS;d.head.appendChild(st)}
   if(!/[?&]topic=/.test(w.location.search)){
    var t=c.dataset.i,n=D[+t].items[+c.querySelector(".exs").value].n;
    setTimeout(function(){try{var tp=d.getElementById("topic"),ex=d.getElementById("exsel");tp.value=t;tp.onchange();ex.value=n;ex.onchange()}catch(e){}},500)}
+  /* Fit the circuit to the window after load, after the example is drawn, and whenever the window is resized */
+  fitAll(d);
+  var tm;w.addEventListener("resize",function(){clearTimeout(tm);tm=setTimeout(function(){fit(d)},150)});
+  if(w.ResizeObserver){var ro=new w.ResizeObserver(function(){clearTimeout(tm);tm=setTimeout(function(){fit(d)},150)});ro.observe(d.documentElement)}
  }catch(e){}}
 function load(c){var f=c.querySelector("iframe"),s=c.querySelector(".exs"),n=D[+c.dataset.i].items[+s.value].n,q="topic="+c.dataset.i+"&ex="+n;
  c.querySelector(".open").href="simulator/?"+q;
