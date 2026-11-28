@@ -13,7 +13,7 @@ document.getElementById("site-header").outerHTML='<header class="site"><div clas
 '<button class="ib" id="theme" title="Switch light / dark theme" aria-label="Switch light or dark theme"><i class="fa-solid fa-moon th-moon"></i><i class="fa-solid fa-sun th-sun"></i></button><button class="ib" id="burger" aria-label="Menu"><i class="fa-solid fa-bars"></i></button></div></header>'+
 '<div id="login-modal-overlay"><div id="login-modal"><button type="button" id="login-modal-close" title="Close">&times;</button><div class="login-modal-icon"><i class="fa-brands fa-google" aria-hidden="true"></i></div><h3>Sign in</h3><p id="login-modal-msg">Sign in with Google to unlock all NGSpice features in the simulator.</p><div id="g_id_signin_container"></div></div></div>';
 
-document.getElementById("site-footer").outerHTML='<footer class="site"><div class="wrap"><div>&copy; 2026 Md. Anisur Rahman &middot; NGSpice Realistic Circuit Simulator</div><div><a href="simulator/index.html">Simulator</a><a href="docs.html">Docs</a><a href="manual.html">User Manual</a><a href="mailto:poetanis@gmail.com">poetanis@gmail.com</a></div></div></footer>';
+document.getElementById("site-footer").outerHTML='<footer class="site"><div class="wrap"><div>&copy; 2026 Md. Anisur Rahman &middot; NGSpice Realistic Circuit Simulator</div><div><a href="simulator/index.html">Simulator</a><a href="docs.html">Docs</a><a href="manual.html">User Manual</a><a href="mailto:poetanis@gmail.com">E-mail ↗️</a></div></div></footer>';
 
 var root=document.documentElement,menu=document.getElementById("menu");
 try{var t=localStorage.getItem("theme");if(t)root.setAttribute("data-theme",t)}catch(e){}
