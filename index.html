@@ -166,7 +166,19 @@ h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;margin:0 0 18px}.lead{font-
        if(pw&&pw.getAttribute('aria-pressed')!=='true'&&!/(^|\s)(on|active|running)(\s|$)/i.test(pw.className||''))pw.click();
       }
       /* VirtuScope ON */
-      function pressOn(){var on=d.querySelector('#btnOn,#onBtn,#runOn,#powerOn')||findBtn(d,/(^|\s)ON$/i);if(on)on.click()}
+      function pressOn(){
+       var on=d.querySelector('#btnOn,#onBtn,#runOn,#powerOn')||findBtn(d,/(^|\s)ON$/i);
+       if(on){['pointerdown','mousedown','pointerup','mouseup','click'].forEach(function(t){try{on.dispatchEvent(new w.MouseEvent(t,{bubbles:true,cancelable:true,view:w}))}catch(e){}})}
+       ['runSimulation','runSim','startSim','startSimulation'].forEach(function(n){try{if(typeof w[n]==='function'&&!on)w[n]()}catch(e){}});
+      }
+      /* keep the VirtuScope panel large (maximized) under the circuit */
+      function scopePanel(){var c=d.querySelector('.work>.center');if(!c)return null;var k=[].slice.call(c.children);
+       for(var i=0;i<k.length;i++){if(/VirtuScope/.test(k[i].textContent||'')&&k[i].querySelectorAll('*').length>20)return k[i]}return null}
+      function maximizeScope(){try{var c=d.querySelector('.work>.center'),sp=scopePanel();if(!c||!sp)return;
+       c.style.setProperty('display','flex','important');c.style.setProperty('flex-direction','column','important');
+       [].forEach.call(c.children,function(k){var cs=w.getComputedStyle(k);if(cs.display==='none'||cs.position==='absolute'||cs.position==='fixed')return;
+        if(k===sp){k.style.setProperty('flex','1 1 62%','important');k.style.setProperty('min-height','0','important');k.style.setProperty('height','auto','important')}
+        else if(k.getBoundingClientRect().height>24){k.style.setProperty('flex','0 1 38%','important');k.style.setProperty('min-height','0','important')}})}catch(e){}}
       setTimeout(function(){var td=findBtn(d,/^Time Domain Analysis$/i);if(td)td.click()},500);
       /* switch the circuit and the simulation ON, then keep checking until the scope really shows a trace */
       var n2=0,civ=setInterval(function(){n2++;
@@ -174,11 +186,11 @@ h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;margin:0 0 18px}.lead{font-
         powerCircuit();
         var done=/\bv\([^)]*\)\s*=\s*-?\d/.test(d.body.innerText||'');
         if(n2===1||n2===2||(!done&&(n2===6||n2===10||n2===14)))pressOn();
-        if(done&&n2>=3){clearInterval(civ);setTimeout(function(){fit(d);autosize()},500)}
+        if(done&&n2>=3){clearInterval(civ);setTimeout(function(){maximizeScope();fit(d);autosize()},500)}
        }catch(e){}
        if(n2>16)clearInterval(civ);
       },1200);
-      [900,1800,3200,5000,7500].forEach(function(ms){setTimeout(autosize,ms)});
+      [900,1800,3200,5000,7500].forEach(function(ms){setTimeout(function(){maximizeScope();autosize();setTimeout(function(){fit(d)},300)},ms)});
      }
     }
    }catch(e){}
