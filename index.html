@@ -20,11 +20,11 @@ h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;margin:0 0 18px}.lead{font-
 .me img{width:220px;height:220px;border-radius:50%;object-fit:cover;border:4px solid var(--panel);box-shadow:0 0 0 3px var(--accent),var(--shadow);background:var(--line)}
 .me h3{margin:20px 0 2px;font-size:21px}.me small{color:var(--mut)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.chips span{background:var(--bg);border:1px solid var(--line);padding:5px 14px;border-radius:99px;font-size:13px;font-weight:600}
-.contact{max-width:640px}.mail{display:flex;gap:18px;align-items:center}.mail .ic{margin:0;width:54px;height:54px;font-size:22px}.mail b{display:block;font-size:13px;color:var(--mut);font-weight:600}.mail a.m{font-size:21px;font-weight:700}
+.contact{max-width:640px}.mail{display:flex;gap:18px;align-items:center}.mail .ic{margin:0;width:54px;height:54px;font-size:22px;flex:none}.mail>div:last-child{min-width:0}.mail b{display:block;font-size:13px;color:var(--mut);font-weight:600}.mail a.m{font-size:21px;font-weight:700;overflow-wrap:anywhere}
 .links2{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;padding-top:20px;border-top:1px solid var(--line);font-size:14.5px}
 .cta{background:var(--hero);color:#eaf1f8;text-align:center;padding:64px 0}.cta h2{margin:0 0 10px}.cta p{color:#b3c5d6;margin:0 0 24px}.cta .btns{justify-content:center}
 @media(max-width:900px){.hero .wrap,.about{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.band .wrap{grid-template-columns:1fr 1fr}.band .wrap>div:nth-child(2){border:0}}
-@media(max-width:600px){.steps{grid-template-columns:1fr}}
+@media(max-width:600px){.steps{grid-template-columns:1fr}.mail a.m{font-size:17px}}
 </style></head>
 <body data-page="home"><div id="site-header"></div>
 <main>
@@ -89,7 +89,7 @@ h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;margin:0 0 18px}.lead{font-
 
 <section id="contact" class="alt"><div class="wrap">
  <div class="eyebrow">Contact</div><h2>Get in touch</h2><p class="sub">Questions, bug reports or feature requests? Send an email.</p>
- <div class="card contact"><div class="mail"><div class="ic"><i class="fa-solid fa-envelope"></i></div><div><b>Email</b><a class="m" href="mailto:poetanis@gmail.com">E-mail ↗️</a></div></div>
+ <div class="card contact"><div class="mail"><div class="ic"><i class="fa-solid fa-envelope"></i></div><div><b>Email</b><a class="m" href="mailto:poetanis@gmail.com">poetanis@gmail.com</a></div></div>
  <div class="links2"><a href="https://github.com/AnisurRahmanJU/NGSpice-Circuit" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a><a href="https://dcaclab.com/users/28506/profile" target="_blank" rel="noopener"><i class="fa-solid fa-user"></i> Profile</a><a href="https://anispice.vercel.app" target="_blank" rel="noopener"><i class="fa-solid fa-microchip"></i> AniSpice</a></div></div>
 </div></section>
 
