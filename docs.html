@@ -125,7 +125,7 @@ D.forEach(function(t,i){tsel.add(new Option((i+1)+". "+t.t+" ("+t.items.length+"
 
 function fit(d){try{var b=d.getElementById("tFit");if(b)b.click()}catch(e){}}
 function fitAll(d){[200,700,1400,2400].forEach(function(ms){setTimeout(function(){fit(d)},ms)})}
-function link(c){c.querySelector(".open").href="simulator/?topic="+c.dataset.i+"&ex="+c._ex}
+function link(c){c.querySelector(".open").href="simulator/"}   /* clean directory link; the topic/example is selected from here */
 function simTopics(f){try{return f.contentWindow.eval("TOPICS")}catch(e){return null}}   /* the real list from simulator/ngspice.js */
 
 /* fill the Select Example menu from ngspice.js (docs-data.js is only the fallback) */
@@ -180,10 +180,13 @@ function openFull(c,ev){
 tps.forEach(function(c){c.querySelector(".open").addEventListener("click",function(e){openFull(c,e)})});
 /* show exactly one topic */
 function show(i){tps.forEach(function(c,k){c.classList.toggle("on",k===i)});tsel.value=i;
- try{history.replaceState(null,"","#t"+(i+1))}catch(e){}open_(tps[i])}
+ try{sessionStorage.setItem("docsTopic",i)}catch(e){}
+ open_(tps[i])}
 tsel.onchange=function(){show(+tsel.value)};
-function fromHash(){var m=/^#t(\d+)$/.exec(location.hash);var i=m?+m[1]-1:0;return(i>=0&&i<tps.length)?i:0}
+function fromHash(){var m=/^#t(\d+)$/.exec(location.hash),i=-1;if(m)i=+m[1]-1;else{try{i=+sessionStorage.getItem("docsTopic")}catch(e){}}return(i>=0&&i<tps.length)?i:0}
 window.addEventListener("hashchange",function(){show(fromHash())});
 show(fromHash());
+/* a link like docs#t5 selects that topic, then the #t5 is removed from the address bar */
+try{if(location.hash)history.replaceState(null,"",location.pathname+location.search)}catch(e){}
 })();
 </script></body></html>
