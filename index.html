@@ -7,8 +7,8 @@
 h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;margin:0 0 18px}.lead{font-size:17.5px;color:#b3c5d6;max-width:520px;margin:0 0 30px}
 .screen{background:#0a1724;border:1px solid rgba(255,255,255,.14);border-radius:10px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.4)}.screen .bar{display:flex;gap:6px;padding:10px 14px;background:#0e2033;border-bottom:1px solid rgba(255,255,255,.08)}.screen .bar i{width:10px;height:10px;border-radius:50%;background:#35506a}.screen svg{display:block;width:100%;height:auto}
 .screen .bar{align-items:center}.screen .bar b{margin-left:10px;font:600 12px/1 monospace;color:#7fe3c0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.screen .bar a{color:#9fc4e8;font-size:12px;text-decoration:none;white-space:nowrap}.screen .bar a:hover{text-decoration:underline}
-.screen iframe{display:block;width:100%;height:clamp(640px,78vh,760px);border:0;background:#0a1724}
-@media(max-width:1024px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:36px}.hero .wrap>div:first-child{max-width:720px}.hero .screen{max-width:760px;justify-self:start}.screen iframe{height:720px}}@media(max-width:600px){.screen iframe{height:760px}}
+.screen iframe{display:block;width:100%;height:clamp(480px,62vh,580px);border:0;background:#0a1724}
+@media(max-width:1024px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:36px}.hero .wrap>div:first-child{max-width:720px}.hero .screen{max-width:760px;justify-self:start}.screen iframe{height:560px}}@media(max-width:600px){.screen iframe{height:600px}}
 .flow{stroke-dasharray:6 8;animation:fl 1s linear infinite}@keyframes fl{to{stroke-dashoffset:-14}}.glow{animation:gl 2s ease-in-out infinite}@keyframes gl{50%{opacity:.4}}
 @media(prefers-reduced-motion:reduce){.flow,.glow{animation:none}}
 .band{background:var(--panel);border-bottom:1px solid var(--line)}.band .wrap{display:grid;grid-template-columns:repeat(4,1fr);text-align:center}
@@ -154,7 +154,7 @@ h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;margin:0 0 18px}.lead{font-
       /* no empty space: make the frame exactly as tall as the circuit + VirtuScope */
       function contentBottom(){var c=d.querySelector('.work>.center');if(!c)return 0;var m=0;
        [].forEach.call(c.children,function(ch){var cs=w.getComputedStyle(ch);if(cs.display==='none'||cs.position==='absolute'||cs.position==='fixed')return;var r=ch.getBoundingClientRect();if(r.height>0)m=Math.max(m,r.bottom)});return m}
-      function autosize(){try{var b=contentBottom();if(!b)return;var nh=Math.max(520,Math.min(1100,Math.ceil(b+6)));
+      function autosize(){try{var b=contentBottom();if(!b)return;var nh=Math.max(440,Math.min(600,Math.ceil(b+6)));
        if(Math.abs(nh-f.clientHeight)>8){f.style.height=nh+'px';setTimeout(function(){fit(d)},250)}}catch(e){}}
       var tm;function refit(){clearTimeout(tm);tm=setTimeout(function(){fit(d);setTimeout(autosize,300)},150)}
       w.addEventListener('resize',refit);if(w.ResizeObserver)new w.ResizeObserver(refit).observe(d.documentElement);
