@@ -81,8 +81,8 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f2740"/><path d="M4 16h5l2-6 4 12 3-9 2 3h8" fill="none" stroke="#4cc3ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div><b>NGSpice Realistic</b><span> Circuit Simulator</span></div></div>
+  <a class="brand" href="https://ngspice-circuit.vercel.app" target="_blank" rel="noopener noreferrer" title="NGSpice Realistic Circuit Simulator" style="color:inherit;text-decoration:none;cursor:pointer"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f2740"/><path d="M4 16h5l2-6 4 12 3-9 2 3h8" fill="none" stroke="#4cc3ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>NGSpice Realistic</b><span> Circuit Simulator</span></div></a>
   <div class="ex"><label style="color:orange;" for="topic"><b>Select Topic</b></label><select id="topic" title="Topics 14 = Relay, 15 = Transformer, 16 = Buzzer Circuits (5 real-life examples)"></select><label style="color:orange;" for="exsel"><b>Select Example</b></label><select id="exsel"></select></div>
   <span class="sp"></span>
   <div class="grp"><button id="bNew" title="New schematic"><i class="fa-solid fa-file-circle-plus" aria-hidden="true"></i> New</button><button id="bOpen" title="Open a .cir netlist"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Open</button><button id="bCir" title="Save netlist (.cir)"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save</button><button id="bSvg" title="Export circuit + simulation graph as SVG"><i class="fa-solid fa-bezier-curve" aria-hidden="true"></i> SVG</button><button id="bPng" title="Export circuit + simulation graph as PNG"><i class="fa-solid fa-file-image" aria-hidden="true"></i> PNG</button></div>
@@ -205,7 +205,7 @@
 <script src="dmm-examples.js?v=cs3"></script>
 <script src="live-effects.js?v=cs16"></script>
 <script src="insert-dialogs.js?v=cs3"></script>
-<script src=link.js"></script>
+<script src="link.js"></script>
 <script>
 /* Component list: add the Fuse (Passive group, after the Buzzer) and show the burn limits in its tooltip */
 (function () {
