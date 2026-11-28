@@ -189,4 +189,16 @@ show(fromHash());
 /* a link like docs#t5 selects that topic, then the #t5 is removed from the address bar */
 try{if(location.hash)history.replaceState(null,"",location.pathname+location.search)}catch(e){}
 })();
-</script></body></html>
+</script><script>
+/* Open every simulator link (header nav, body, footer) in a new tab */
+(function(){
+ function fix(){
+  document.querySelectorAll('a[href*="simulator/"], a[href$="simulator"]').forEach(function(a){
+   if(a.target!=='_blank'){a.target='_blank';a.rel='noopener';}
+  });
+ }
+ fix();
+ new MutationObserver(fix).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+</body></html>
