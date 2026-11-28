@@ -88,3 +88,5 @@ window.addEventListener("storage",function(e){if(e.key===STORAGE_KEY)updateAuthU
 
 updateAuthUI();initGoogle(40);
 })();
+/* clean links: loads link.js from the same folder (no index.html, no .html where the host allows) */
+(function(){var s=document.createElement("script");s.src="link.js";document.head.appendChild(s)})();
