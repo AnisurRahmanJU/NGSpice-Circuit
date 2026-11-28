@@ -99,4 +99,16 @@ h1{font-size:clamp(34px,4.6vw,54px);line-height:1.1;margin:0 0 18px}.lead{font-s
 </main>
 <div id="site-footer"></div><script src="site.js"></script>
  <script src="link.js"></script>
+ <script>
+ /* Open every simulator link (including header nav, desktop and mobile) in a new tab */
+ (function(){
+  function fix(){
+   document.querySelectorAll('a[href*="simulator/"], a[href$="simulator"]').forEach(function(a){
+    if(a.target!=='_blank'){a.target='_blank';a.rel='noopener';}
+   });
+  }
+  fix();
+  new MutationObserver(fix).observe(document.body,{childList:true,subtree:true});
+ })();
+ </script>
 </body></html>
