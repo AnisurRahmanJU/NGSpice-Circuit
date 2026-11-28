@@ -165,6 +165,19 @@ tps.forEach(function(c){var i=+c.dataset.i;c._ex=D[i].items[0].n;fillEx(c,D[i].i
   if(c._ok){apply(f,c);fitAll(f.contentDocument)}else if(f._fx){/* still loading: drive() will pick c._ex up */}else open_(c)};
  link(c)});
 
+
+/* "Open full simulator": open it, then select this topic/example from here (works even if the host drops ?topic=&ex=) */
+function openFull(c,ev){
+ var w=window.open(c.querySelector(".open").href,"_blank");if(!w)return;   /* popup blocked: the normal link still opens */
+ ev.preventDefault();var t=String(c.dataset.i),n=String(c._ex),tries=0,ok=0;
+ var iv=setInterval(function(){tries++;
+  try{var d=w.document,tp=d.getElementById("topic"),ex=d.getElementById("exsel");
+   if(d.readyState==="complete"&&tp&&ex&&tp.options.length>+t){
+    if(tp.value!==t||ex.value!==n){if(tp.value!==t){tp.value=t;tp.onchange()}ex.value=n;ex.onchange();ok=0}
+    else if(++ok>=3)clearInterval(iv)}
+  }catch(e){}
+  if(tries>80||w.closed)clearInterval(iv)},250)}
+tps.forEach(function(c){c.querySelector(".open").addEventListener("click",function(e){openFull(c,e)})});
 /* show exactly one topic */
 function show(i){tps.forEach(function(c,k){c.classList.toggle("on",k===i)});tsel.value=i;
  try{history.replaceState(null,"","#t"+(i+1))}catch(e){}open_(tps[i])}
