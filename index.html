@@ -151,13 +151,18 @@ h1{font-size:clamp(34px,4.6vw,54px);line-height:1.1;margin:0 0 18px}.lead{font-s
      else if(++ok>=3){
       clearInterval(iv);
       [200,700,1400,2400].forEach(function(ms){setTimeout(function(){fit(d)},ms)});
-      var tm;function refit(){clearTimeout(tm);tm=setTimeout(function(){fit(d)},150)}
+      /* no empty space: make the frame exactly as tall as the circuit + VirtuScope */
+      function contentBottom(){var c=d.querySelector('.work>.center');if(!c)return 0;var m=0;
+       [].forEach.call(c.children,function(ch){var cs=w.getComputedStyle(ch);if(cs.display==='none'||cs.position==='absolute'||cs.position==='fixed')return;var r=ch.getBoundingClientRect();if(r.height>0)m=Math.max(m,r.bottom)});return m}
+      function autosize(){try{var b=contentBottom();if(!b)return;var nh=Math.max(520,Math.min(1100,Math.ceil(b+6)));
+       if(Math.abs(nh-f.clientHeight)>8){f.style.height=nh+'px';setTimeout(function(){fit(d)},250)}}catch(e){}}
+      var tm;function refit(){clearTimeout(tm);tm=setTimeout(function(){fit(d);setTimeout(autosize,300)},150)}
       w.addEventListener('resize',refit);if(w.ResizeObserver)new w.ResizeObserver(refit).observe(d.documentElement);
-      /* auto-run: open Time Domain Analysis, then press ON */
-      setTimeout(function(){
-       var td=findBtn(d,/^Time Domain Analysis$/i);if(td)td.click();
-       setTimeout(function(){if(ran)return;ran=1;var on=findBtn(d,/^(\u25B6\s*)?ON$/i);if(on)on.click();setTimeout(function(){fit(d)},600)},700);
-      },500);
+      /* auto-run: open Time Domain Analysis, then switch the simulation ON (retried so it never gets missed) */
+      function pressOn(){var on=d.querySelector('#btnOn,#onBtn,#runOn,#powerOn')||findBtn(d,/(^|\s)ON$/i);if(on)on.click()}
+      setTimeout(function(){var td=findBtn(d,/^Time Domain Analysis$/i);if(td)td.click()},500);
+      setTimeout(pressOn,1300);setTimeout(pressOn,3000);
+      [900,1800,3200,5000,7500].forEach(function(ms){setTimeout(autosize,ms)});
      }
     }
    }catch(e){}
